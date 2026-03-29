@@ -106,12 +106,12 @@ tr:hover td{background:rgba(15,23,42,.04)}
 .up-ack-row{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .up-ack-row label{font-size:12px;color:var(--tx2);white-space:nowrap;min-width:100px}
 .up-ack-row input{flex:1;background:var(--s2);border:1px solid var(--b2);color:var(--tx);padding:7px 11px;border-radius:6px;font-size:13px;min-width:180px}
-.up-zone{border:2px dashed rgba(96,165,250,.3);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;position:relative}
-.up-zone:hover,.up-zone.drag{border-color:var(--blue);background:rgba(59,130,246,.05)}
+.up-zone{border:2px dashed rgba(37,99,235,.35);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;position:relative;background:var(--s2)}
+.up-zone:hover,.up-zone.drag{border-color:var(--blue);background:rgba(59,130,246,.10)}
 .up-zone input{display:none}
 .up-icon{font-size:40px;margin-bottom:8px;line-height:1}
 .up-ztext{font-size:13px;color:var(--tx2);margin-bottom:4px}
-.up-ztext b{color:var(--bl);cursor:pointer}
+.up-ztext b{color:var(--blue);cursor:pointer}
 .up-zhint{font-size:11px;color:var(--tx3)}
 .up-list{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;max-height:220px;overflow-y:auto}
 .up-item{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:7px 11px;display:flex;align-items:center;gap:8px;font-size:12px}
@@ -127,11 +127,6 @@ tr:hover td{background:rgba(15,23,42,.04)}
 .up-btn-go:hover{opacity:.86} .up-btn-go:disabled{opacity:.35;cursor:not-allowed}
 .up-cats-info{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
 .up-cats-info span{font-size:10px;padding:2px 7px;border-radius:4px}
-.up-sep{text-align:center;font-size:11px;color:var(--tx3);margin:10px 0;position:relative}
-.up-sep::before,.up-sep::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--b1)}
-.up-sep::before{left:0}.up-sep::after{right:0}
-.up-demo-btn{width:100%;background:transparent;border:1px solid var(--b2);color:var(--tx2);padding:8px;border-radius:7px;font-size:12px;cursor:pointer;transition:all .2s}
-.up-demo-btn:hover{background:rgba(255,255,255,.04);color:var(--tx)}
 
 </style>
 </head>
@@ -973,7 +968,7 @@ function upHide() {
 <div id="upScreen">
   <div class="up-box">
     <div class="up-logo">🔍 Cyber<span>Trace</span></div>
-    <div class="up-sub">Fraud Money Trail Intelligence System — Upload Case CSV Files</div>
+    <div class="up-sub">Upload your case CSV files to populate the fraud investigation dashboard.</div>
 
     <div class="up-ack-row">
       <label>Case / ACK No.</label>
@@ -1001,18 +996,15 @@ function upHide() {
       <input type="file" id="upInput" multiple accept=".csv" onchange="upAdd(this.files)">
       <div class="up-icon">📂</div>
       <div class="up-ztext">Drag &amp; drop CSV files here or <b>click to browse</b></div>
-      <div class="up-zhint">Select all category CSVs — auto-detected from filename</div>
+      <div class="up-zhint">Files are auto-categorized by filename. Rename files to include category keywords if needed.</div>
     </div>
 
     <div class="up-list" id="upList"></div>
 
     <div class="up-footer">
-      <div class="up-status" id="upStatus">No files selected</div>
+      <div class="up-status" id="upStatus">No files selected yet</div>
       <button class="up-btn-go" id="upGo" onclick="upProcess()" disabled>Load Dashboard →</button>
     </div>
-
-    <div class="up-sep">or</div>
-    <button class="up-demo-btn" onclick="upHide()">📊 Skip — view demo data already loaded</button>
   </div>
 </div>
 </body>
