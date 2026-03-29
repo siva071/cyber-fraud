@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberTrace — Fraud Money Trail Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#f8fafc;--s1:#ffffff;--s2:#f1f5f9;--s3:#e2e8f0;--b1:rgba(15,23,42,.08);--b2:rgba(15,23,42,.12);--tx:#0f172a;--tx2:#475569;--tx3:#64748b;--blue:#2563eb;--bl:#0ea5e9;--red:#dc2626;--rl:#ef4444;--amb:#d97706;--al:#fbbf24;--grn:#16a34a;--gl:#4aedb8;--pur:#7c3aed;--pl:#a78bfa;--tel:#0d9488;--ora:#f97316;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:15px;min-height:100vh}
+.topbar{background:var(--s1);border-bottom:1px solid var(--b2);padding:14px 22px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-title{font-size:16px;font-weight:700;flex:1;letter-spacing:.01em}
+.badge{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-red{background:rgba(239,68,68,.12);color:var(--rl);border:1px solid rgba(239,68,68,.18)}
+.badge-grn{background:rgba(16,185,129,.15);color:var(--gl);border:1px solid rgba(16,185,129,.3)}
+.badge-amb{background:rgba(245,158,11,.15);color:var(--al);border:1px solid rgba(245,158,11,.3)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--bl);border:1px solid rgba(59,130,246,.3)}
+.badge-pur{background:rgba(139,92,246,.15);color:var(--pl);border:1px solid rgba(139,92,246,.3)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--grn);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4)}50%{box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+.nav{background:var(--s1);border-bottom:1px solid var(--b1);display:flex;overflow-x:auto}
+.nb{padding:10px 18px;border:none;background:none;color:var(--tx2);cursor:pointer;font-size:13px;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+.nb:hover{color:var(--tx);background:rgba(255,255,255,.03)}
+.nb.active{color:var(--bl);border-bottom-color:var(--blue);background:rgba(59,130,246,.06)}
+.content{padding:20px;max-width:1440px;margin:0 auto}
+.panel{display:none}.panel.active{display:block;animation:fi .22s ease}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:900px){.g4,.g5{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:580px){.g4,.g5,.g3,.g2{grid-template-columns:1fr}}
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:18px;box-shadow:0 10px 20px rgba(15,23,42,.05)}
+.card-t{font-size:11px;color:var(--tx2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.metric{font-size:28px;font-weight:700}
+.msub{font-size:12px;color:var(--tx3);margin-top:4px}
+.mr{color:var(--rl)}.mg{color:var(--grn)}.ma{color:var(--amb)}.mb{color:var(--blue)}.mp{color:var(--pur)}
+.sec{font-size:15px;font-weight:700;margin:24px 0 14px;display:flex;align-items:center;gap:10px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--blue)}
+table{width:100%;border-collapse:collapse;font-size:13px;color:var(--tx)}
+th{background:var(--s2);color:var(--tx);padding:12px 14px;text-align:left;font-weight:700;border-bottom:1px solid var(--b1);white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid rgba(15,23,42,.08)}
+tr:hover td{background:rgba(15,23,42,.04)}
+.tw{overflow-x:auto;border-radius:12px;border:1px solid var(--b1);background:var(--s1)}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;margin-right:3px;white-space:nowrap}
+.t-hold{background:rgba(245,158,11,.13);color:var(--al)}
+.t-aeps{background:rgba(139,92,246,.13);color:var(--pl)}
+.t-atm{background:rgba(20,184,166,.13);color:var(--tel)}
+.t-pos{background:rgba(249,115,22,.13);color:var(--ora)}
+.t-cheque{background:rgba(239,68,68,.13);color:var(--rl)}
+.t-other{background:rgba(59,130,246,.13);color:var(--bl)}
+.t-cust{background:rgba(236,72,153,.13);color:#f9a8d4}
+.t-monthly{background:rgba(16,185,129,.13);color:var(--gl)}
+.t-rej{background:rgba(100,116,139,.13);color:#cbd5e1}
+.t-500{background:rgba(251,191,36,.13);color:#fde68a}
+.btn{background:#ffffff;border:1px solid var(--b1);color:var(--blue);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;box-shadow:0 3px 8px rgba(15,23,42,.08)}
+.btn:hover{background:var(--s2)}
+.btn-r{color:var(--rl);border-color:rgba(239,68,68,.25)}.btn-r:hover{background:rgba(239,68,68,.12)}
+.btn-g{color:var(--grn);border-color:rgba(16,185,129,.25)}.btn-g:hover{background:rgba(16,185,129,.12)}
+.ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.ctrl input,.ctrl select{background:#ffffff;border:1px solid var(--b1);color:var(--tx);padding:10px 12px;border-radius:8px;font-size:13px;box-shadow:0 3px 8px rgba(15,23,42,.05)}
+.rbar{height:5px;border-radius:3px;background:var(--s3);overflow:hidden;margin-top:4px}
+.rf{height:100%;border-radius:3px}
+.rf-c{background:var(--red)}.rf-h{background:var(--amb)}.rf-m{background:var(--blue)}.rf-l{background:var(--grn)}
+.fp{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px}
+.fp-critical{background:rgba(239,68,68,.15);color:var(--rl)}
+.fp-high{background:rgba(245,158,11,.15);color:var(--al)}
+.fp-medium{background:rgba(59,130,246,.15);color:var(--bl)}
+.fp-low{background:rgba(16,185,129,.15);color:var(--gl)}
+.alert-box{border-radius:8px;padding:11px 14px;margin-bottom:9px;display:flex;gap:10px}
+.a-crit{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25)}
+.a-high{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25)}
+.a-med{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2)}
+.at{font-weight:600;font-size:13px;margin-bottom:2px}
+.ab{font-size:12px;color:var(--tx2)}
+.fc{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:13px;margin-bottom:9px}
+.fh{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.sr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.sr:last-child{border:none}
+.sl{color:var(--tx2)}.sv{font-weight:600}
+.tl{position:relative;padding-left:20px}
+.tl::before{content:'';position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--s3)}
+.tli{position:relative;margin-bottom:14px}
+.tld{position:absolute;left:-17px;top:4px;width:9px;height:9px;border-radius:50%;border:2px solid var(--s1)}
+.tld-r{background:var(--red)}.tld-a{background:var(--amb)}.tld-b{background:var(--blue)}.tld-g{background:var(--grn)}
+.tlt{font-size:10px;color:var(--tx3)}.tlm{font-size:12px;margin-top:1px}.tls{font-size:11px;color:var(--tx2)}
+#gCv{width:100%;border-radius:10px;border:1px solid var(--b1);background:var(--s1);cursor:grab;display:block}
+#gCv:active{cursor:grabbing}
+#tooltip{position:fixed;background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:10px 12px;font-size:12px;pointer-events:none;display:none;z-index:999;max-width:230px;line-height:1.5}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.md{background:var(--s1);border:1px solid var(--b2);border-radius:14px;padding:22px;max-width:460px;width:90%}
+.mt{font-size:15px;font-weight:600;margin-bottom:14px}
+.mc{float:right;background:none;border:none;color:var(--tx2);font-size:20px;cursor:pointer}
+.info{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:9px;padding:11px 14px;font-size:12px;color:var(--tx2);margin-bottom:14px}
+.warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:9px;padding:11px 14px;font-size:12px;color:var(--al);margin-bottom:10px}
+
+/* ── UPLOAD SCREEN ── */
+#upScreen{position:fixed;inset:0;background:rgba(248,250,252,.95);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto}
+.up-box{background:var(--s1);border:1px solid var(--b1);border-radius:18px;padding:30px 34px;max-width:720px;width:100%;box-shadow:0 20px 50px rgba(15,23,42,.08)}
+.up-logo{font-size:24px;font-weight:800;letter-spacing:.03em;margin-bottom:4px}
+.up-logo span{color:var(--blue)}
+.up-sub{font-size:13px;color:var(--tx3);margin-bottom:20px}
+.up-ack-row{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.up-ack-row label{font-size:12px;color:var(--tx2);white-space:nowrap;min-width:100px}
+.up-ack-row input{flex:1;background:var(--s2);border:1px solid var(--b2);color:var(--tx);padding:7px 11px;border-radius:6px;font-size:13px;min-width:180px}
+.up-zone{border:2px dashed rgba(96,165,250,.3);border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;position:relative}
+.up-zone:hover,.up-zone.drag{border-color:var(--blue);background:rgba(59,130,246,.05)}
+.up-zone input{display:none}
+.up-icon{font-size:40px;margin-bottom:8px;line-height:1}
+.up-ztext{font-size:13px;color:var(--tx2);margin-bottom:4px}
+.up-ztext b{color:var(--bl);cursor:pointer}
+.up-zhint{font-size:11px;color:var(--tx3)}
+.up-list{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;max-height:220px;overflow-y:auto}
+.up-item{background:var(--s2);border:1px solid var(--b1);border-radius:7px;padding:7px 11px;display:flex;align-items:center;gap:8px;font-size:12px}
+.up-item-icon{font-size:15px;flex-shrink:0}
+.up-item-name{flex:1;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.up-item-cat select{background:var(--s3);border:1px solid var(--b1);color:var(--al);font-size:11px;padding:3px 6px;border-radius:4px;cursor:pointer}
+.up-item-rm{cursor:pointer;color:var(--tx3);font-size:16px;line-height:1;padding:0 2px;flex-shrink:0}
+.up-item-rm:hover{color:var(--rl)}
+.up-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.up-status{font-size:12px;color:var(--tx3);flex:1}
+.up-status.ok{color:var(--gl)} .up-status.err{color:var(--rl)}
+.up-btn-go{background:var(--blue);border:none;color:#fff;padding:9px 26px;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;letter-spacing:.01em}
+.up-btn-go:hover{opacity:.86} .up-btn-go:disabled{opacity:.35;cursor:not-allowed}
+.up-cats-info{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.up-cats-info span{font-size:10px;padding:2px 7px;border-radius:4px}
+.up-sep{text-align:center;font-size:11px;color:var(--tx3);margin:10px 0;position:relative}
+.up-sep::before,.up-sep::after{content:'';position:absolute;top:50%;width:44%;height:1px;background:var(--b1)}
+.up-sep::before{left:0}.up-sep::after{right:0}
+.up-demo-btn{width:100%;background:transparent;border:1px solid var(--b2);color:var(--tx2);padding:8px;border-radius:7px;font-size:12px;cursor:pointer;transition:all .2s}
+.up-demo-btn:hover{background:rgba(255,255,255,.04);color:var(--tx)}
+
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="pulse"></div>
+  <div class="topbar-title">Cyber Fraud Money Trail Intelligence System</div>
+  <span class="badge badge-red">LIVE</span>
+  <span class="badge badge-amb">ACK: 20202260010111</span>
+  <span class="badge badge-blue">403 Records · 10 Categories</span>
+  <span id="tDisp" class="badge badge-pur">--:--</span>
+</div>
+<nav class="nav">
+  <button class="nb active" onclick="sp('ov',this)">Overview</button>
+  <button class="nb" onclick="sp('graph',this)">Transaction Graph</button>
+  <button class="nb" onclick="sp('acct',this)">Account Risk</button>
+  <button class="nb" onclick="sp('alerts',this)">Alerts</button>
+  <button class="nb" onclick="sp('freeze',this)">Freeze Recs</button>
+  <button class="nb" onclick="sp('rec',this)">Recovery</button>
+  <button class="nb" onclick="sp('trail',this)">Full Trail</button>
+</nav>
+<div class="content">
+
+<!-- OVERVIEW -->
+<div id="p-ov" class="panel active">
+  <div class="sec"><div class="dot"></div>Case Summary — ACK: 20202260010111</div>
+  <div class="g5" style="margin-bottom:16px">
+    <div class="card"><div class="card-t">Total Traced Amount</div><div class="metric mr">₹64.3L</div><div class="msub">₹6,433,259 across 10 categories</div></div>
+    <div class="card"><div class="card-t">Amount on Hold</div><div class="metric ma">₹65,412</div><div class="msub">100 accounts · 20 banks</div></div>
+    <div class="card"><div class="card-t">Withdrawn / Lost</div><div class="metric mr">₹25.4L</div><div class="msub">ATM + AEPS + Cheque + POS</div></div>
+    <div class="card"><div class="card-t">Unique Accounts</div><div class="metric mb">276</div><div class="msub">Across 64 banks</div></div>
+    <div class="card"><div class="card-t">Total Transactions</div><div class="metric mp">403</div><div class="msub">9 CSV files loaded</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-t">Transaction Count by Category</div>
+      <div style="position:relative;height:220px"><canvas id="catCntChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-t">Amount Distributed by Category (₹)</div>
+      <div style="position:relative;height:220px"><canvas id="catAmtChart"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-t">Key Metrics</div>
+      <div class="sr"><span class="sl">ATM withdrawals (85 txns)</span><span class="sv ma">₹7,56,494</span></div>
+      <div class="sr"><span class="sl">Cheque cashouts (6 txns)</span><span class="sv mr">₹15,86,000</span></div>
+      <div class="sr"><span class="sl">Other trail (73 txns)</span><span class="sv mr">₹37,51,681</span></div>
+      <div class="sr"><span class="sl">AEPS biometric withdrawals (26 txns)</span><span class="sv" style="color:var(--pl)">₹1,30,871</span></div>
+      <div class="sr"><span class="sl">POS terminal (2 txns)</span><span class="sv ma">₹65,000</span></div>
+      <div class="sr"><span class="sl">Monthly transfers (10 txns)</span><span class="sv mg">₹73,300</span></div>
+      <div class="sr"><span class="sl">Customer service (1 txn)</span><span class="sv mg">₹4,500</span></div>
+      <div class="sr"><span class="sl">On Hold — recoverable</span><span class="sv mg">₹65,412</span></div>
+      <div class="sr"><span class="sl">Others <₹500 (99 micro-txns)</span><span class="sv" style="color:var(--tx3)">No amount col</span></div>
+      <div class="sr"><span class="sl">Funds not received (ICCL reject)</span><span class="sv" style="color:var(--tx3)">₹0</span></div>
+    </div>
+    <div class="card">
+      <div class="card-t">Significant Events Timeline</div>
+      <div class="tl" style="margin-top:10px">
+        <div class="tli"><div class="tld tld-r"></div><div class="tlt">25/02/2026 06:42 AM</div><div class="tlm">Cheque cashout — DCB Bank GARIAHAT</div><div class="tls">Acct: 8714700000985 · ₹4,16,000</div></div>
+        <div class="tli"><div class="tld tld-r"></div><div class="tlt">25/02/2026 07:26 AM</div><div class="tlm">AU Bank transfer — technical error masking</div><div class="tls">Acct: 2502418098957393 · ₹2,50,005</div></div>
+        <div class="tli"><div class="tld tld-a"></div><div class="tlt">25/02/2026 09:40 AM</div><div class="tlm">3 rapid AEPS withdrawals — IndusInd Bank</div><div class="tls">Acct: 100282950090 · ₹30,000 total</div></div>
+        <div class="tli"><div class="tld tld-b"></div><div class="tlt">18/02/2026 15:21 PM</div><div class="tlm">HDFC cheque — Raja Bazar Motihari</div><div class="tls">Acct: 50200083944033 · ₹2,00,000</div></div>
+        <div class="tli"><div class="tld tld-a"></div><div class="tlt">21/01/2026 17:03 PM</div><div class="tlm">POS — H P LUDHIANA (geographic mismatch)</div><div class="tls">Acct: 10714600010265 · ₹50,000</div></div>
+        <div class="tli"><div class="tld tld-r"></div><div class="tlt">09/03/2026 17:34 PM</div><div class="tlm">ICCL rejection — account not found</div><div class="tls">Acct: 40677101106356 · funds re-routed</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAPH -->
+<div id="p-graph" class="panel">
+  <div class="sec"><div class="dot"></div>Money Trail Transaction Graph</div>
+  <div class="info">Nodes = bank accounts that received fraud money. Size = transaction count. Red glow = highest risk. Root node = fraud origin (Case 20202260010111). Drag to pan · Scroll to zoom · Click for details.</div>
+  <div class="ctrl">
+    <select id="gf" onchange="drawG()"><option value="all">All Types</option><option value="hold">On Hold</option><option value="aeps">AEPS</option><option value="atm">ATM</option><option value="pos">POS</option><option value="cheque">Cheque</option><option value="other">Other</option></select>
+    <select id="grl" onchange="drawG()"><option value="all">All Risk</option><option value="critical">Critical Only</option><option value="high">High+</option><option value="medium">Medium+</option></select>
+    <button class="btn" onclick="gReset()">Reset</button>
+    <button class="btn btn-r" onclick="gHR()">High Risk Only</button>
+    <span style="flex:1"></span>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--tx2)">
+      <span>🔴 Critical</span><span>🟡 On Hold</span><span>🟣 AEPS</span><span>🟢 ATM</span><span>🟠 Cheque</span><span>🔵 Other</span>
+    </div>
+  </div>
+  <canvas id="gCv" height="540"></canvas>
+  <div id="tooltip"></div>
+</div>
+
+<!-- ACCOUNT RISK -->
+<div id="p-acct" class="panel">
+  <div class="sec"><div class="dot"></div>Account Risk Scoring (276 unique accounts)</div>
+  <div class="g4" style="margin-bottom:14px">
+    <div class="card"><div class="card-t">Critical (≥80)</div><div class="metric mr" id="ac-c">1</div></div>
+    <div class="card"><div class="card-t">High (60–79)</div><div class="metric ma" id="ac-h">0</div></div>
+    <div class="card"><div class="card-t">Medium (40–59)</div><div class="metric mb" id="ac-m">0</div></div>
+    <div class="card"><div class="card-t">Low (&lt;40)</div><div class="metric mg" id="ac-l">0</div></div>
+  </div>
+  <div class="ctrl">
+    <input type="text" id="aSearch" placeholder="Search account / bank..." style="flex:1;max-width:320px" oninput="filterA()">
+    <select id="aRf" onchange="filterA()"><option value="all">All Levels</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+    <button class="btn btn-g" onclick="exportA()">Export CSV</button>
+  </div>
+  <div class="tw" style="margin-top:10px">
+    <table><thead><tr><th>Account No.</th><th>Bank</th><th>Category</th><th>Txns</th><th>Total Amount</th><th>Risk Score</th><th>Level</th><th>Freeze</th></tr></thead>
+    <tbody id="aTbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div id="p-alerts" class="panel">
+  <div class="sec"><div class="dot"></div>Suspicious Pattern Alerts (auto-detected from your data)</div>
+  <div class="alert-box a-crit">
+    <div style="font-size:16px">🚨</div>
+    <div><div class="at" style="color:var(--rl)">Account 50200083944033 — Multi-Category Fraud (HDFC + ATM + Cheque)</div>
+    <div class="ab">3 transactions across 2 categories. ₹5,50,000 total. Cheque paid at Raja Bazar Motihari (₹2L + ₹3L) AND ATM withdrawals via HDFC. This account is the highest-risk account — 92/100 risk score. Immediate freeze recommended.</div></div>
+  </div>
+  <div class="alert-box a-crit">
+    <div style="font-size:16px">🚨</div>
+    <div><div class="at" style="color:var(--rl)">Cheque Cashout — ₹15,86,000 across 6 cheques (5 accounts)</div>
+    <div class="ab">DCB Bank GARIAHAT (₹4,16,000 · Branch Mgr: SHUBHADEEP DAS), HDFC Bank Raja Bazar (₹2L + ₹3L · MOHAMMAD ASALAM + SHAHID IMAMA), Union Bank TARI (₹20,000), Indian Bank KANGEYAM (₹5L), Canara Bank KADAMALAIGUNDU (₹1.5L). Physical branch-level investigation required.</div></div>
+  </div>
+  <div class="alert-box a-crit">
+    <div style="font-size:16px">🚨</div>
+    <div><div class="at" style="color:var(--rl)">ATM Withdrawals — ₹7,56,494 across 85 transactions · 56 accounts · 23 banks</div>
+    <div class="ab">Cash withdrawn across India: Jamnagar GJ, Ludhiana PB, Paramakudi TN, Ramanathapuram TN, Rameswaram, Charkhi Dadri HR, Talcher Odisha. Pan-India geographic spread is classic mule account pattern. ATM CCTV cross-verification required.</div></div>
+  </div>
+  <div class="alert-box a-crit">
+    <div style="font-size:16px">🚨</div>
+    <div><div class="at" style="color:var(--rl)">Other Trail — ₹37,51,681 across 73 transactions (largest category)</div>
+    <div class="ab">Includes: Canara Bank ₹12.2L (acct 65102200036400), Bank of India ₹5L (503120110000597), IndusInd ₹5L (259289675887), AU Bank ₹2.5L (2502418098957393 — with deliberate technical error masking). 64 unique accounts across 38 banks.</div></div>
+  </div>
+  <div class="alert-box a-high">
+    <div style="font-size:16px">⚠️</div>
+    <div><div class="at" style="color:var(--al)">AEPS Biometric Withdrawals — 26 transactions · ₹1,30,871 · 9 banks</div>
+    <div class="ab">IndusInd Bank (100282950090 — 3 AEPS × ₹10K each), Bank of Baroda (40508100016934 — 4 AEPS × ₹10K in March 2026), Airtel Payments Bank (9006273679), PNB, Central Bank, Federal Bank, Chhattisgarh Gramin Bank. AEPS bypasses OTP — biometric cloning/BC agent fraud suspected.</div></div>
+  </div>
+  <div class="alert-box a-high">
+    <div style="font-size:16px">⚠️</div>
+    <div><div class="at" style="color:var(--al)">99 Micro-Transactions — Others &lt;₹500 (Axis Bank, IDBI, etc.)</div>
+    <div class="ab">Account 925020036182237 (Axis Bank) has multiple same-txn-ID entries (CBINR12026010510028312). Account 782104000498173 (IDBI) appears with UPI refs MUFINPAY, XPRESSBUY. Sub-₹500 structuring to avoid reporting thresholds — FATF ML-03 pattern.</div></div>
+  </div>
+  <div class="alert-box a-high">
+    <div style="font-size:16px">⚠️</div>
+    <div><div class="at" style="color:var(--al)">POS Geographic Mismatch — Ludhiana (Punjab)</div>
+    <div class="ab">Account 10714600010265 (DCB Bank) — ₹50,000 POS at H P LUDHIANA, Punjab. Account 20025654796 (SBI) — ₹15,000 at Dhanalaxmi Glass House. Both disputed. Mule accounts operated by network in Punjab.</div></div>
+  </div>
+  <div class="alert-box a-med">
+    <div style="font-size:16px">ℹ️</div>
+    <div><div class="at" style="color:var(--bl)">ICCL Rejection — Funds Possibly Re-routed</div>
+    <div class="ab">Account 40677101106356 — ACHDRTPZ0000009580 rejected by ICCL (Indian Clearing Corporation Ltd) on 09/03/2026 17:34 with message "account number does not belong to ICCL". Funds may have been re-routed to alternate payment gateway.</div></div>
+  </div>
+  <div class="sec" style="margin-top:22px"><div class="dot"></div>Pattern Analytics</div>
+  <div class="g2">
+    <div class="card"><div class="card-t">Txn Count by Category</div><div style="position:relative;height:200px"><canvas id="patChart"></canvas></div></div>
+    <div class="card"><div class="card-t">Amount by Category</div><div style="position:relative;height:200px"><canvas id="amtChart2"></canvas></div></div>
+  </div>
+</div>
+
+<!-- FREEZE -->
+<div id="p-freeze" class="panel">
+  <div class="sec"><div class="dot"></div>Freeze Recommendations — Prioritised by Risk</div>
+  <div class="g4" style="margin-bottom:14px">
+    <div class="card"><div class="card-t">Recommended Freeze</div><div class="metric mr" id="fr-cnt">0</div></div>
+    <div class="card"><div class="card-t">Total at Risk</div><div class="metric ma" id="fr-amt">₹0</div></div>
+    <div class="card"><div class="card-t">Marked This Session</div><div class="metric mg" id="fr-dn">0</div></div>
+    <div class="card"><div class="card-t">Pending Action</div><div class="metric mb" id="fr-pd">0</div></div>
+  </div>
+  <div id="fList"></div>
+</div>
+
+<!-- RECOVERY -->
+<div id="p-rec" class="panel">
+  <div class="sec"><div class="dot"></div>Recovery Dashboard</div>
+  <div class="g4" style="margin-bottom:14px">
+    <div class="card"><div class="card-t">Total Amount Traced</div><div class="metric mr">₹64.3L</div><div class="msub">₹6,433,259.05</div></div>
+    <div class="card"><div class="card-t">Amount on Hold</div><div class="metric ma">₹65,412</div><div class="msub">1.0% of total</div></div>
+    <div class="card"><div class="card-t">Withdrawn / Irrecoverable</div><div class="metric mr">₹25.4L</div><div class="msub">ATM+AEPS+Cheque+POS+Cust</div></div>
+    <div class="card"><div class="card-t">Other (investigating)</div><div class="metric mb">₹38.2L</div><div class="msub">Other + Monthly trail</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-t">Recovery Split</div><div style="position:relative;height:240px"><canvas id="recChart"></canvas></div></div>
+    <div class="card">
+      <div class="card-t">Category-wise Recovery Status</div>
+      <div class="sr"><span class="sl"><span class="tag t-hold">On Hold</span> 100 txns</span><span class="sv mg">₹65,412 — HELD ✅</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-atm">ATM</span> 85 txns</span><span class="sv mr">₹7,56,494 — WITHDRAWN ❌</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-cheque">Cheque</span> 6 txns</span><span class="sv mr">₹15,86,000 — WITHDRAWN ❌</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-other">Other</span> 73 txns</span><span class="sv ma">₹37,51,681 — INVESTIGATING ⚠️</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-aeps">AEPS</span> 26 txns</span><span class="sv mr">₹1,30,871 — WITHDRAWN ❌</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-monthly">Monthly</span> 10 txns</span><span class="sv ma">₹73,300 — INVESTIGATING ⚠️</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-pos">POS</span> 2 txns</span><span class="sv mr">₹65,000 — DISPUTED</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-cust">Cust Svc</span> 1 txn</span><span class="sv mr">₹4,500 — WITHDRAWN ❌</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-500">Others &lt;500</span> 99 txns</span><span class="sv" style="color:var(--tx3)">No amount data</span></div>
+      <div class="sr"><span class="sl"><span class="tag t-rej">Rejected</span> 1 txn</span><span class="sv mg">₹0 — BOUNCED BACK ✅</span></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="card-t">Bank-wise Hold Status (Top Banks)</div>
+    <div style="position:relative;height:180px;margin-top:8px"><canvas id="bankChart"></canvas></div>
+  </div>
+</div>
+
+<!-- FULL TRAIL -->
+<div id="p-trail" class="panel">
+  <div class="sec"><div class="dot"></div>Complete Fraud Trail — All 403 Records</div>
+  <div class="ctrl">
+    <input type="text" id="tSearch" placeholder="Search account, txn ID, bank, remarks..." style="flex:1;max-width:380px" oninput="filterT()">
+    <select id="tCat" onchange="filterT()">
+      <option value="all">All Categories</option>
+      <option value="hold">On Hold</option><option value="atm">ATM</option><option value="aeps">AEPS</option>
+      <option value="cheque">Cheque</option><option value="other">Other</option><option value="others500">Others &lt;500</option>
+      <option value="pos">POS</option><option value="cust">Customer Svc</option><option value="monthly">Monthly</option><option value="rejected">Rejected</option>
+    </select>
+    <button class="btn btn-g" onclick="exportT()">Export CSV</button>
+  </div>
+  <div class="warn">⚠️ Note: Cheque file was uploaded twice (1 & 2) — they are identical. The data below shows only one copy. Also, <strong>Others &lt;₹500</strong> has no amount column in the original CSV — amount shows ₹0 correctly.</div>
+  <div class="tw" style="margin-top:10px">
+    <table><thead><tr><th>#</th><th>Account No.</th><th>Txn ID / UTR</th><th>Date</th><th>Amount</th><th>Category</th><th>Bank</th><th>Remarks</th></tr></thead>
+    <tbody id="tTbody"></tbody></table>
+  </div>
+  <div id="tCount" style="font-size:11px;color:var(--tx3);margin-top:8px"></div>
+</div>
+
+</div><!-- end content -->
+<div class="mo" id="modal">
+  <div class="md">
+    <button class="mc" onclick="cm()">×</button>
+    <div class="mt" id="mTitle">Account Details</div>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<script>
+// ── DEMO DATA (replaced when CSVs uploaded) ──
+let ROWS = [{"acct":"8948252529","bank":"Kotak Mahindra Bank","txn":"600541677041","date":"05/01/2026 20:02:41","amt":808.07,"cat":"hold","remarks":""},{"acct":"399040100003152","bank":"Jammu and Kashmir Bank","txn":"600541677996","date":"25/02/2026 00:04:44","amt":3000.0,"cat":"hold","remarks":""},{"acct":"782104000498173","bank":"IDBI Bank","txn":"600541677516","date":"25/02/2026 00:06:21","amt":63.89,"cat":"hold","remarks":""},{"acct":"4068101001931","bank":"Canara Bank (including Syndicate Bank)","txn":"600541677879","date":"25/02/2026 00:07:13","amt":22.61,"cat":"hold","remarks":""},{"acct":"84652200024417","bank":"Canara Bank (including Syndicate Bank)","txn":"600541678011","date":"25/02/2026 00:07:07","amt":500.0,"cat":"hold","remarks":""},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:06:38","amt":30.91,"cat":"hold","remarks":""},{"acct":"50100488844851","bank":"HDFC Bank","txn":"600541678018","date":"05/01/2026 12:00:00","amt":28.88,"cat":"hold","remarks":""},{"acct":"2440000100109391","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677232","date":"25/02/2026 00:06:41","amt":2147.3,"cat":"hold","remarks":""},{"acct":"114322120000051","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"600541678016","date":"25/02/2026 00:06:18","amt":12.15,"cat":"hold","remarks":""},{"acct":"503802010500382","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"600541677435","date":"25/02/2026 00:06:14","amt":970.0,"cat":"hold","remarks":""},{"acct":"925010029056854","bank":"Axis Bank","txn":"394982664356","date":"25/02/2026 00:00:00","amt":3000.0,"cat":"hold","remarks":""},{"acct":"1100050322835","bank":"Tamilnad Mercantile Bank Ltd.","txn":"600541677432","date":"25/02/2026 00:11:23","amt":19.57,"cat":"hold","remarks":""},{"acct":"745201700132129","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"395044947713","date":"25/02/2026 00:11:05","amt":2.54,"cat":"hold","remarks":""},{"acct":"39679760041","bank":"State Bank of India","txn":"487985441566","date":"05/01/2026 22:51:46","amt":500.0,"cat":"hold","remarks":""},{"acct":"20100075886391","bank":"Bandhan Bank","txn":"601094016994","date":"25/02/2026 00:19:39","amt":1098.96,"cat":"hold","remarks":""},{"acct":"32520342344","bank":"State Bank of India","txn":"600621892768","date":"06/01/2026 21:49:32","amt":15.85,"cat":"hold","remarks":""},{"acct":"3248621501","bank":"Kotak Mahindra Bank","txn":"536107660138","date":"27/12/2025 17:28:57","amt":196.3,"cat":"hold","remarks":""},{"acct":"2746680461","bank":"Kotak Mahindra Bank","txn":"536107661900","date":"27/12/2025 20:44:26","amt":197.18,"cat":"hold","remarks":""},{"acct":"4145877213","bank":"Kotak Mahindra Bank","txn":"536107661516","date":"27/12/2025 20:55:26","amt":709.0,"cat":"hold","remarks":""},{"acct":"32167103714","bank":"State Bank of India","txn":"536107659120","date":"27/12/2025 17:25:50","amt":2.29,"cat":"hold","remarks":""},{"acct":"110273303670","bank":"Canara Bank (including Syndicate Bank)","txn":"536107662245","date":"25/02/2026 00:26:01","amt":35.99,"cat":"hold","remarks":""},{"acct":"61332310001922","bank":"Canara Bank (including Syndicate Bank)","txn":"536107660209","date":"25/02/2026 00:26:04","amt":504.0,"cat":"hold","remarks":""},{"acct":"110024912183","bank":"Canara Bank (including Syndicate Bank)","txn":"536107657618","date":"25/02/2026 00:26:08","amt":592.76,"cat":"hold","remarks":""},{"acct":"110092327809","bank":"Canara Bank (including Syndicate Bank)","txn":"536107655656","date":"25/02/2026 00:26:15","amt":1000.0,"cat":"hold","remarks":""},{"acct":"3261372572","bank":"Central Bank of India","txn":"536107662583","date":"25/02/2026 00:27:49","amt":2.45,"cat":"hold","remarks":""},{"acct":"50190007585273","bank":"Bandhan Bank","txn":"536107656616","date":"25/02/2026 00:26:24","amt":2904.0,"cat":"hold","remarks":""},{"acct":"8020825838","bank":"Indian Bank (including Allahabad Bank)","txn":"536107661957","date":"25/02/2026 00:27:59","amt":33.85,"cat":"hold","remarks":""},{"acct":"7961816639","bank":"Indian Bank (including Allahabad Bank)","txn":"536107661590","date":"25/02/2026 00:28:35","amt":550.0,"cat":"hold","remarks":""},{"acct":"348601000008309","bank":"Indian Overseas Bank","txn":"536107657259","date":"27/12/2025 00:00:00","amt":1267.79,"cat":"hold","remarks":""},{"acct":"332201000005586","bank":"Indian Overseas Bank","txn":"536107655129","date":"28/12/2025 00:00:00","amt":4.0,"cat":"hold","remarks":""},{"acct":"7671000400009262","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107662246","date":"25/02/2026 00:27:26","amt":500.0,"cat":"hold","remarks":""},{"acct":"6880000100070309","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107662743","date":"25/02/2026 00:27:35","amt":443.98,"cat":"hold","remarks":""},{"acct":"4871000100124169","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107660061","date":"25/02/2026 00:27:38","amt":568.0,"cat":"hold","remarks":""},{"acct":"4.798E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107655331","date":"25/02/2026 00:27:44","amt":804.0,"cat":"hold","remarks":""},{"acct":"62426977888","bank":"State Bank of India","txn":"536107660696","date":"27/12/2025 17:26:22","amt":970.0,"cat":"hold","remarks":""},{"acct":"62397572225","bank":"State Bank of India","txn":"536107660331","date":"27/12/2025 17:26:10","amt":964.0,"cat":"hold","remarks":""},{"acct":"35642651523","bank":"State Bank of India","txn":"536107660978","date":"27/12/2025 17:26:22","amt":509.0,"cat":"hold","remarks":""},{"acct":"35618103235","bank":"State Bank of India","txn":"536107660137","date":"27/12/2025 17:26:13","amt":73.91,"cat":"hold","remarks":""},{"acct":"20253399856","bank":"State Bank of India","txn":"536107660737","date":"27/12/2025 17:26:23","amt":4.0,"cat":"hold","remarks":""},{"acct":"43200897592","bank":"State Bank of India","txn":"536107660703","date":"27/12/2025 17:26:22","amt":30.19,"cat":"hold","remarks":""},{"acct":"40857815433","bank":"State Bank of India","txn":"536107663562","date":"27/12/2025 17:27:04","amt":77.49,"cat":"hold","remarks":""},{"acct":"32778751115","bank":"State Bank of India","txn":"536107662257","date":"27/12/2025 17:26:44","amt":19.68,"cat":"hold","remarks":""},{"acct":"37654795512","bank":"State Bank of India","txn":"536107658219","date":"27/12/2025 17:25:40","amt":37.89,"cat":"hold","remarks":""},{"acct":"39398052082","bank":"State Bank of India","txn":"536107660685","date":"27/12/2025 17:26:21","amt":59.47,"cat":"hold","remarks":""},{"acct":"33665130575","bank":"State Bank of India","txn":"536107663210","date":"27/12/2025 17:27:03","amt":1.22,"cat":"hold","remarks":""},{"acct":"41188995993","bank":"State Bank of India","txn":"536107654448","date":"27/12/2025 17:24:37","amt":1000.0,"cat":"hold","remarks":""},{"acct":"20247792392","bank":"State Bank of India","txn":"536107655964","date":"27/12/2025 17:25:01","amt":175.41,"cat":"hold","remarks":""},{"acct":"62097724882","bank":"State Bank of India","txn":"536107654121","date":"27/12/2025 17:24:37","amt":1362.39,"cat":"hold","remarks":""},{"acct":"9851450287","bank":"Airtel Payments Bank","txn":"536107654127","date":"27/12/2025 17:24:38","amt":2.79,"cat":"hold","remarks":""},{"acct":"8059306331","bank":"Airtel Payments Bank","txn":"536107657925","date":"27/12/2025 17:25:32","amt":304.49,"cat":"hold","remarks":""},{"acct":"7505827550","bank":"Airtel Payments Bank","txn":"536107656561","date":"27/12/2025 17:25:08","amt":28.68,"cat":"hold","remarks":""},{"acct":"9358178760","bank":"Airtel Payments Bank","txn":"536107657329","date":"27/12/2025 17:25:21","amt":60.54,"cat":"hold","remarks":""},{"acct":"9084156929","bank":"Airtel Payments Bank","txn":"536107659450","date":"27/12/2025 17:26:02","amt":7.86,"cat":"hold","remarks":""},{"acct":"9216197394","bank":"Airtel Payments Bank","txn":"536107659431","date":"27/12/2025 17:26:01","amt":6.05,"cat":"hold","remarks":""},{"acct":"9933146129","bank":"Airtel Payments Bank","txn":"536107659395","date":"27/12/2025 17:26:00","amt":718.51,"cat":"hold","remarks":""},{"acct":"9674884114","bank":"Airtel Payments Bank","txn":"536107658251","date":"27/12/2025 17:25:41","amt":244.64,"cat":"hold","remarks":""},{"acct":"9726093932","bank":"Airtel Payments Bank","txn":"536107657986","date":"27/12/2025 17:25:33","amt":21.65,"cat":"hold","remarks":""},{"acct":"9244039113","bank":"Airtel Payments Bank","txn":"536107659653","date":"27/12/2025 17:25:59","amt":110.96,"cat":"hold","remarks":""},{"acct":"9799386544","bank":"Airtel Payments Bank","txn":"536107659716","date":"27/12/2025 17:26:02","amt":4.38,"cat":"hold","remarks":""},{"acct":"9079932647","bank":"Airtel Payments Bank","txn":"536107658585","date":"27/12/2025 17:25:43","amt":1.42,"cat":"hold","remarks":""},{"acct":"8799533813","bank":"Airtel Payments Bank","txn":"536107661637","date":"27/12/2025 17:26:33","amt":5.02,"cat":"hold","remarks":""},{"acct":"8967266881","bank":"Airtel Payments Bank","txn":"536107659224","date":"27/12/2025 17:25:53","amt":506.0,"cat":"hold","remarks":""},{"acct":"8433178551","bank":"Airtel Payments Bank","txn":"536107657669","date":"27/12/2025 17:25:31","amt":2.11,"cat":"hold","remarks":""},{"acct":"7068397220","bank":"Airtel Payments Bank","txn":"536107657121","date":"27/12/2025 17:25:23","amt":5.75,"cat":"hold","remarks":""},{"acct":"9703834614","bank":"Airtel Payments Bank","txn":"536107664691","date":"27/12/2025 17:27:22","amt":406.11,"cat":"hold","remarks":""},{"acct":"9305318048","bank":"Airtel Payments Bank","txn":"536107659712","date":"27/12/2025 17:26:01","amt":20.35,"cat":"hold","remarks":""},{"acct":"12433211098041","bank":"UCO Bank","txn":"536107661638","date":"24/02/2026 00:00:00","amt":2.5,"cat":"hold","remarks":""},{"acct":"8400100014111","bank":"UCO Bank","txn":"536107655616","date":"24/02/2026 00:00:00","amt":1000.0,"cat":"hold","remarks":""},{"acct":"13230210001455","bank":"UCO Bank","txn":"536107655713","date":"24/02/2026 00:00:00","amt":5523.0,"cat":"hold","remarks":""},{"acct":"303222010001303","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"536107654489","date":"25/02/2026 00:26:41","amt":651.55,"cat":"hold","remarks":""},{"acct":"10195638456","bank":"IDFC First Bank","txn":"536107654492","date":"24/02/2026 18:55:49","amt":237.62,"cat":"hold","remarks":""},{"acct":"50100551816725","bank":"HDFC Bank","txn":"536107655904","date":"27/12/2025 12:00:00","amt":115.06,"cat":"hold","remarks":""},{"acct":"134040100012207","bank":"Jammu and Kashmir Bank","txn":"536107658588","date":"25/02/2026 00:27:36","amt":1603.19,"cat":"hold","remarks":""},{"acct":"6449631393","bank":"Kotak Mahindra Bank","txn":"536166601812","date":"28/12/2025 14:13:15","amt":728.99,"cat":"hold","remarks":""},{"acct":"9451079092","bank":"Kotak Mahindra Bank","txn":"929509576868","date":"28/12/2025 07:06:14","amt":2000.0,"cat":"hold","remarks":""},{"acct":"449610110015459","bank":"Bank of India","txn":"536107654770","date":"25/02/2026 00:34:21","amt":2000.0,"cat":"hold","remarks":""},{"acct":"31166325770","bank":"State Bank of India","txn":"116267596102","date":"27/12/2025 18:13:18","amt":2877.98,"cat":"hold","remarks":""},{"acct":"794610110000068","bank":"Bank of India","txn":"536107663766","date":"25/02/2026 00:30:52","amt":5.46,"cat":"hold","remarks":""},{"acct":"32323601102","bank":"State Bank of India","txn":"572754104917","date":"27/12/2025 18:51:14","amt":1122.02,"cat":"hold","remarks":""},{"acct":"42267383258","bank":"State Bank of India","txn":"234886915804","date":"28/12/2025 14:07:25","amt":504.31,"cat":"hold","remarks":""},{"acct":"50448727036","bank":"Indian Bank (including Allahabad Bank)","txn":"517592365435","date":"25/02/2026 00:30:47","amt":958.25,"cat":"hold","remarks":""},{"acct":"79302000000866","bank":"Indian Overseas Bank","txn":"536261894008","date":"28/12/2025 00:00:00","amt":999.89,"cat":"hold","remarks":""},{"acct":"3218000302","bank":"Fino Payments Bank","txn":"986224294701","date":"25/02/2026 00:32:33","amt":500.0,"cat":"hold","remarks":""},{"acct":"110285142853","bank":"Canara Bank (including Syndicate Bank)","txn":"970934387036","date":"25/02/2026 00:32:39","amt":587.09,"cat":"hold","remarks":""},{"acct":"3.165E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"394462614301","date":"25/02/2026 00:32:14","amt":500.0,"cat":"hold","remarks":""},{"acct":"1182201700094535","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"592905749774","date":"25/02/2026 00:32:29","amt":11.02,"cat":"hold","remarks":""},{"acct":"1124001500148847","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"167001240504","date":"25/02/2026 00:32:32","amt":961.89,"cat":"hold","remarks":""},{"acct":"9.329E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"394464679745","date":"25/02/2026 00:32:35","amt":862.0,"cat":"hold","remarks":""},{"acct":"996810110004756","bank":"Bank of India","txn":"536107661911","date":"25/02/2026 00:33:00","amt":513.0,"cat":"hold","remarks":""},{"acct":"432718210003098","bank":"Bank of India","txn":"536107663227","date":"25/02/2026 00:32:16","amt":11.93,"cat":"hold","remarks":""},{"acct":"625020110000194","bank":"Bank of India","txn":"394995407806","date":"25/02/2026 00:31:12","amt":109.34,"cat":"hold","remarks":""},{"acct":"41103491768","bank":"State Bank of India","txn":"734628252636","date":"27/12/2025 18:24:16","amt":408.79,"cat":"hold","remarks":""},{"acct":"61301297086","bank":"State Bank of India","txn":"116265130144","date":"27/12/2025 17:35:21","amt":7.98,"cat":"hold","remarks":""},{"acct":"33676778396","bank":"State Bank of India","txn":"282075748679","date":"01/01/2026 15:43:47","amt":1504.19,"cat":"hold","remarks":""},{"acct":"50100401812392","bank":"HDFC Bank","txn":"880077017671","date":"05/01/2026 12:00:00","amt":3780.0,"cat":"hold","remarks":""},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:37:08","amt":23.14,"cat":"hold","remarks":""},{"acct":"165101519528","bank":"ICICI Bank","txn":"573028827463","date":"25/02/2026 00:36:49","amt":49.12,"cat":"hold","remarks":""},{"acct":"50100799085069","bank":"HDFC Bank","txn":"536363532545","date":"29/12/2025 12:00:00","amt":500.0,"cat":"hold","remarks":""},{"acct":"4058000100044655","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"297526521399","date":"25/02/2026 00:37:11","amt":4474.61,"cat":"hold","remarks":""},{"acct":"42902132850","bank":"State Bank of India","txn":"143202333625","date":"28/12/2025 08:50:45","amt":0.14,"cat":"hold","remarks":""},{"acct":"100282950090","bank":"IndusInd Bank","txn":"535900025968","date":"25/02/2026 09:40:AM","amt":10000.0,"cat":"aeps","remarks":""},{"acct":"100282950090","bank":"IndusInd Bank","txn":"535900023959","date":"25/02/2026 09:40:AM","amt":10000.0,"cat":"aeps","remarks":""},{"acct":"100282950090","bank":"IndusInd Bank","txn":"535900023852","date":"25/02/2026 09:40:AM","amt":10000.0,"cat":"aeps","remarks":""},{"acct":"16892311001835","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900022124","date":"25/02/2026 09:40:AM","amt":5500.0,"cat":"aeps","remarks":"AEPS/CW/536217288519/register/SIRSA /TRTR/I"},{"acct":"664302120001449","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"536004997143","date":"01/03/2026 10:30:AM","amt":1300.0,"cat":"aeps","remarks":"AEPS-ISS-CW-536185102275-200179-NCU000000724841-Ja Avl. Bal: 0.00"},{"acct":"RCMBHI116552","bank":"HDFC Bank","txn":"605713053459","date":"01/03/2026 13:06:PM","amt":1.0,"cat":"aeps","remarks":"Wrong Account or trxn details provided and unable reassign again as crossed more"},{"acct":"3957427239","bank":"Central Bank of India","txn":"600539450094","date":"06/03/2026 11:55:AM","amt":2000.0,"cat":"aeps","remarks":"AEPS"},{"acct":"407702011015663","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"600634530899","date":"06/03/2026 12:00:PM","amt":700.0,"cat":"aeps","remarks":"AEPS-ONUS-CW-602015506367-UBI0000U3900417-HARDOI Avl. Bal: 0.00"},{"acct":"1174201700020498","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600539465833","date":"06/03/2026 12:00:PM","amt":2000.0,"cat":"aeps","remarks":"AEPS/CW/600519402988/K3303313/NADIA /TRTR/O"},{"acct":"9628914398","bank":"Airtel Payments Bank","txn":"600539464288","date":"06/03/2026 12:09:PM","amt":2300.0,"cat":"aeps","remarks":"AEPS/CW/600516076692/YBURFL005898708/GOTUTTI"},{"acct":"10220100024706","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"102400415861","date":"06/03/2026 12:10:PM","amt":8000.0,"cat":"aeps","remarks":"Details: bcid - 19010949, bcname - CHAGANLAL PRAJAPAT, bclocation - BOB BANK KE "},{"acct":"435202120043419","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"433186963718","date":"06/03/2026 12:10:PM","amt":5000.0,"cat":"aeps","remarks":"AEPS-ONUS-CW-600511263692-UBI0000U0700914-MORENA Avl. Bal: 0.00"},{"acct":"99980107144946","bank":"Federal Bank","txn":"600539452162","date":"06/03/2026 12:14:PM","amt":1020.0,"cat":"aeps","remarks":"EFT/600519487603 AEPS CW AEPS"},{"acct":"1441001700246716","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107114858","date":"06/03/2026 12:25:PM","amt":5000.0,"cat":"aeps","remarks":"AEPS/CW/536117206344/K1000563/SIWAN /TRTR/O"},{"acct":"7942001700037301","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107136052","date":"06/03/2026 12:35:PM","amt":500.0,"cat":"aeps","remarks":"AEPS/CW/536315254453/K0135134/GORAKHPUR /TRTR/O"},{"acct":"77059041584","bank":"Chhattisgarh Gramin Bank(CGB)","txn":"242163448579","date":"06/03/2026 18:56:PM","amt":10000.0,"cat":"aeps","remarks":"Dispute Amt:1011/-,Txn Date:03/02/26 AEPS/CW/603411704601/ 5F721432/Sarguja Kore"},{"acct":"3612973076","bank":"Central Bank of India","txn":"153072123855","date":"07/03/2026 12:53:PM","amt":3000.0,"cat":"aeps","remarks":"CASH WITHDRAWAL BY SELF AEPS DT 05/01/2026"},{"acct":"9572374503","bank":"Airtel Payments Bank","txn":"600539448948","date":"08/03/2026 17:22:PM","amt":1000.0,"cat":"aeps","remarks":"AEPS/CW/600817252441/ARU000000162182/GIRIDH"},{"acct":"9006273679","bank":"Airtel Payments Bank","txn":"65330012156","date":"08/03/2026 17:58:PM","amt":7000.0,"cat":"aeps","remarks":"AEPS/CW/601709732180/BIU000011651293/SOUTH TWENTY"},{"acct":"9006273679","bank":"Airtel Payments Bank","txn":"65330012156","date":"08/03/2026 17:58:PM","amt":4050.0,"cat":"aeps","remarks":"AEPS/CW/601318330800/UCU003080309494/UJJAIN"},{"acct":"40508100016934","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536210884139","date":"18/03/2026 14:23:PM","amt":10000.0,"cat":"aeps","remarks":"NPCI RRN: 600108139553, BC Id: YBUSPI007813824, Beneficiary Name: Shri Lal Lodha"},{"acct":"40508100016934","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536210884139","date":"20/03/2026 11:56:AM","amt":10000.0,"cat":"aeps","remarks":"NPCI RRN: 536219212701, BC Id: YBUSML007980893, Beneficiary Name: Shri Lal Lodha"},{"acct":"40508100016934","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536210884139","date":"20/03/2026 11:56:AM","amt":10000.0,"cat":"aeps","remarks":"NPCI RRN: 600113039749, BC Id: YBUSML007980893, Beneficiary Name: Shri Lal Lodha"},{"acct":"40508100016934","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536210884139","date":"20/03/2026 11:56:AM","amt":10000.0,"cat":"aeps","remarks":"NPCI RRN: 536507639856, BC Id: YBUSML007980893, Beneficiary Name: Shri Lal Lodha"},{"acct":"2801001700190791","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"518506389603","date":"23/03/2026 11:20:AM","amt":1000.0,"cat":"aeps","remarks":"AEPS/CW/603009613824/K0403136/JEHANABAD /TRTR/O"},{"acct":"9598100063838","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"602610064443","date":"23/03/2026 12:30:PM","amt":1500.0,"cat":"aeps","remarks":"NPCI RRN No:602617067325, BC ID:17047307 , Beneficiary Name:KALICHARAN PATEL , L"},{"acct":"39398052082","bank":"State Bank of India","txn":"536107660685","date":"28/12/2025 17:37:PM","amt":1500.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"158882139091","bank":"IndusInd Bank","txn":"297453730470","date":"27/12/2025 18:12:PM","amt":4500.0,"cat":"atm","remarks":""},{"acct":"17901000070450","bank":"Indian Overseas Bank","txn":"636912504749","date":"03/01/2026 00:00:AM","amt":9027.14,"cat":"atm","remarks":"Available Balance :254.56"},{"acct":"1186110190060497","bank":"Ujjivan Small Finance Bank Ltd","txn":"298178741947","date":"10/01/2026 00:00:AM","amt":10000.0,"cat":"atm","remarks":"ATM/601017016242/RAM/DPRO1080/RAMANATHAPURA"},{"acct":"50100777514834","bank":"HDFC Bank","txn":"638798378794","date":"21/01/2026 07:01:AM","amt":1000.0,"cat":"atm","remarks":"ATW-419188XXXXXX1110-CHLDH006-LUDHIANA"},{"acct":"50100777514834","bank":"HDFC Bank","txn":"638751391062","date":"21/01/2026 07:01:AM","amt":20000.0,"cat":"atm","remarks":"ATW-419188XXXXXX1110-CHLDH006-LUDHIANA"},{"acct":"50100777514834","bank":"HDFC Bank","txn":"638778797613","date":"21/01/2026 07:01:AM","amt":4000.0,"cat":"atm","remarks":"ATW-419188XXXXXX1110-CHLDH006-LUDHIANA"},{"acct":"734110110014317","bank":"Bank of India","txn":"882955858845","date":"16/02/2026 09:02:AM","amt":5000.0,"cat":"atm","remarks":"Atm Money Transfer"},{"acct":"50200083944033","bank":"HDFC Bank","txn":"SBIN326048569375","date":"18/02/2026 15:27:PM","amt":50000.0,"cat":"atm","remarks":"ATW-403875XXXXXX3933-00137011-PURBA"},{"acct":"80061900032201","bank":"Sarva Haryana Gramin Bank (including Haryana Gramin Bank)","txn":"536324967307","date":"30/12/2025 11:34:AM","amt":10000.0,"cat":"atm","remarks":"ATM/CWDR/HC057700/1541/6081264001195404"},{"acct":"41434923577","bank":"State Bank of India","txn":"600645842929","date":"06/02/2026 17:54:PM","amt":10000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"25370100020419","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"573094221879","date":"31/12/2025 00:00:AM","amt":10000.0,"cat":"atm","remarks":"Available Balance: 0.00"},{"acct":"25370100020419","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"573094221879","date":"31/12/2025 00:00:AM","amt":10000.0,"cat":"atm","remarks":"Available Balance: 0.00"},{"acct":"2979108072321","bank":"Canara Bank (including Syndicate Bank)","txn":"600229783113","date":"02/01/2026 18:36:PM","amt":10000.0,"cat":"atm","remarks":"ATM CASH-CHUTP143-PREMNAGARJHANSIJHANSIUPIN-02/01/26 18:36:05/2955"},{"acct":"1929001500013346","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"394813802081","date":"04/01/2026 13:08:PM","amt":10000.0,"cat":"atm","remarks":"ATM WDR 600413005459 BEHEA CHAURASTA \\"},{"acct":"11111111111111","bank":"HDFC Bank","txn":"596346395005","date":"30/12/2025 00:00:AM","amt":25000.0,"cat":"atm","remarks":"11111111111111"},{"acct":"100049372949","bank":"IndusInd Bank","txn":"295978520092","date":"30/12/2025 11:12:AM","amt":9500.0,"cat":"atm","remarks":""},{"acct":"100049372949","bank":"IndusInd Bank","txn":"295978520092","date":"30/12/2025 11:12:AM","amt":9500.0,"cat":"atm","remarks":""},{"acct":"100049372949","bank":"IndusInd Bank","txn":"295978520092","date":"30/12/2025 11:12:AM","amt":9500.0,"cat":"atm","remarks":""},{"acct":"100049372949","bank":"IndusInd Bank","txn":"295978520092","date":"30/12/2025 11:12:AM","amt":9500.0,"cat":"atm","remarks":""},{"acct":"4199000100045067","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"697144872334","date":"10/01/2026 00:00:AM","amt":10000.0,"cat":"atm","remarks":"ATM WDR 8479 PNB 135 CHURCH CORNER RAMAN"},{"acct":"110089698589","bank":"Canara Bank (including Syndicate Bank)","txn":"600228946031","date":"02/01/2026 22:26:PM","amt":3000.0,"cat":"atm","remarks":"ATM CASH-6FULTADA-CITSCHEMEVIIKOLKATAKOLKATAWBIN-02/01/26 22:26:47/3853"},{"acct":"309027602386","bank":"Ratnakar Bank Limited (RBL)","txn":"395869106760","date":"21/01/2026 14:01:PM","amt":20000.0,"cat":"atm","remarks":"ATW/459183XXXXXX3245/SALEM SUKRI COMPLEX SALEM,RE147001:000000008088:140108,S230"},{"acct":"11540110076101","bank":"UCO Bank","txn":"CBINH26005410717","date":"05/01/2026 13:40:PM","amt":20000.0,"cat":"atm","remarks":"600,513,004,510,600,000,000,000"},{"acct":"11540110076101","bank":"UCO Bank","txn":"CBINH26005410717","date":"05/01/2026 13:57:PM","amt":30000.0,"cat":"atm","remarks":"600,513,907,068,600,000,000,000,000,000,000,000"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536003278155","date":"26/12/2025 11:44:AM","amt":9000.0,"cat":"atm","remarks":"536017006928"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536003278155","date":"26/12/2025 11:45:AM","amt":2700.0,"cat":"atm","remarks":"536017006929"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536003278155","date":"26/12/2025 11:43:AM","amt":9000.0,"cat":"atm","remarks":"536017006927"},{"acct":"157601000051308","bank":"Indian Overseas Bank","txn":"536003559358","date":"30/12/2025 00:00:AM","amt":20000.0,"cat":"atm","remarks":"Available Balance :0"},{"acct":"157601000051308","bank":"Indian Overseas Bank","txn":"536003559358","date":"30/12/2025 00:00:AM","amt":3300.0,"cat":"atm","remarks":"Available Balance :0"},{"acct":"6236615844","bank":"Indian Bank (including Allahabad Bank)","txn":"536003560405","date":"26/12/2025 18:52:PM","amt":20000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 185247/SELF-RS NO 70/1A8, DARGAHRAMAN"},{"acct":"6236615844","bank":"Indian Bank (including Allahabad Bank)","txn":"536003560405","date":"26/12/2025 18:54:PM","amt":1000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 185432/SELF-RS NO 70/1A8, DARGAHRAMAN"},{"acct":"8208650988","bank":"Indian Bank (including Allahabad Bank)","txn":"536004039557","date":"26/12/2025 17:12:PM","amt":20000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 171225/SELF-MADURAI RAMESWARAM,RD RAM"},{"acct":"8208650988","bank":"Indian Bank (including Allahabad Bank)","txn":"536004039557","date":"26/12/2025 17:13:PM","amt":1000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 171342/SELF-MADURAI RAMESWARAM,RD RAM"},{"acct":"8202036462","bank":"Indian Bank (including Allahabad Bank)","txn":"536004047261","date":"26/12/2025 17:12:PM","amt":20000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 171212/SELF-3/845-A,BHARATHI NAGAR RA"},{"acct":"8202036462","bank":"Indian Bank (including Allahabad Bank)","txn":"536004047261","date":"26/12/2025 17:13:PM","amt":1200.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1226 TRAN TIME -(HHMMSS) 171344/SELF-MADURAI-RAMESWARAM RD RAM"},{"acct":"8202036462","bank":"Indian Bank (including Allahabad Bank)","txn":"536004047261","date":"27/12/2025 15:24:PM","amt":1200.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 1227 TRAN TIME -(HHMMSS) 152400/SELF-NEAR SARAVANA BAKERYPARAM"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536003278155","date":"26/12/2025 00:00:AM","amt":2700.0,"cat":"atm","remarks":"Available Balance: 0.00"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536003278155","date":"26/12/2025 00:00:AM","amt":9000.0,"cat":"atm","remarks":"Available Balance: 0.00"},{"acct":"181100050321449","bank":"Tamilnad Mercantile Bank Ltd.","txn":"536004108676","date":"26/12/2025 17:42:PM","amt":10000.0,"cat":"atm","remarks":"ATM-CASH-001185-536017001185"},{"acct":"181100050321449","bank":"Tamilnad Mercantile Bank Ltd.","txn":"536004108676","date":"26/12/2025 17:43:PM","amt":10027.14,"cat":"atm","remarks":"ATM-CASH-002182-536017002182"},{"acct":"221711345148","bank":"Jio Payments Bank Ltd","txn":"536004296325","date":"31/12/2025 17:16:PM","amt":10027.14,"cat":"atm","remarks":"Transaction Successful ::000"},{"acct":"44640482249","bank":"State Bank of India","txn":"602099208942","date":"21/01/2026 22:22:PM","amt":10000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"44640482249","bank":"State Bank of India","txn":"602099208942","date":"21/01/2026 22:23:PM","amt":10000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"16990100013609","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536106714382","date":"30/12/2025 11:57:AM","amt":2000.0,"cat":"atm","remarks":"8993"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"394617998850","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"394617906165","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"394617955819","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"696482668192","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"696482695956","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"110201000054816","bank":"Indian Overseas Bank","txn":"696482722264","date":"30/12/2025 00:00:AM","amt":2527.14,"cat":"atm","remarks":"Available Balance :0"},{"acct":"37272450401","bank":"State Bank of India","txn":"116459882447","date":"03/01/2026 17:59:PM","amt":8000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"37272450401","bank":"State Bank of India","txn":"116459882447","date":"02/01/2026 15:43:PM","amt":3000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"726318210013323","bank":"Bank of India","txn":"536106715813","date":"27/12/2025 12:12:PM","amt":1000.0,"cat":"atm","remarks":"Atm Money Transfer"},{"acct":"194110100079821","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"536107661576","date":"27/12/2025 22:03:PM","amt":7900.0,"cat":"atm","remarks":"536122024415"},{"acct":"31001014150","bank":"The Mehsana Urban Co-Op. Bank","txn":"536277915809","date":"06/01/2026 13:24:PM","amt":5000.0,"cat":"atm","remarks":"ATM/ROS/WDL/600613028846/00498030/OPP CINE PLUS T"},{"acct":"50100825828712","bank":"HDFC Bank","txn":"638738186712","date":"21/01/2026 16:11:PM","amt":20000.0,"cat":"atm","remarks":"ATW-419188XXXXXX9881-CHTNU092-SALEM"},{"acct":"61562610002050","bank":"Canara Bank (including Syndicate Bank)","txn":"572793569552","date":"28/12/2025 20:37:PM","amt":4500.0,"cat":"atm","remarks":"CASH-MCRM5120-MUTHURBUSSTANDMUTHURTNIN-28/12/25"},{"acct":"1900101023391","bank":"Canara Bank (including Syndicate Bank)","txn":"536003277568","date":"26/12/2025 00:00:AM","amt":20000.0,"cat":"atm","remarks":"ATM Cash-S1T01385-MADURAIRAMESWARAMRDRAMANATHAPURATNIN-26/12/25 15:12:28/8284"},{"acct":"1900101023391","bank":"Canara Bank (including Syndicate Bank)","txn":"536003277568","date":"05/01/2026 14:13:PM","amt":20000.0,"cat":"atm","remarks":"ATM Cash-1093W028-CANARABANKPARAMAKUDITNIN-05/01/26 14:13:21/8284"},{"acct":"1900101020212","bank":"Canara Bank (including Syndicate Bank)","txn":"536003276846","date":"26/12/2025 17:27:PM","amt":19000.0,"cat":"atm","remarks":"ATM Cash-1093W039-CANARABANKPARAMAKUDITNIN-26/12/25 17:27:42/8480"},{"acct":"1900101020212","bank":"Canara Bank (including Syndicate Bank)","txn":"536003276846","date":"26/12/2025 15:09:PM","amt":21000.0,"cat":"atm","remarks":"ATM Cash-S1T01385-MADURAIRAMESWARAMRDRAMANATHAPURATNIN-26/12/25 15:09:23/8480"},{"acct":"32943487095","bank":"State Bank of India","txn":"536005001308","date":"29/12/2025 09:33:AM","amt":2000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"11586279153","bank":"State Bank of India","txn":"536004997200","date":"26/12/2025 22:02:PM","amt":7000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"10002679868","bank":"IDFC First Bank","txn":"631285741857","date":"03/01/2026 05:06:AM","amt":500.0,"cat":"atm","remarks":"da 496"},{"acct":"98310100007841","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"600539446267","date":"08/01/2026 11:48:AM","amt":10000.0,"cat":"atm","remarks":"8426"},{"acct":"257040100009451","bank":"Jammu and Kashmir Bank","txn":"600539464106","date":"05/01/2026 17:13:PM","amt":4500.0,"cat":"atm","remarks":"-3269.33"},{"acct":"174010100001314","bank":"Jammu and Kashmir Bank","txn":"S68691632","date":"12/01/2026 15:21:PM","amt":20000.0,"cat":"atm","remarks":"-10457.43"},{"acct":"174010100001314","bank":"Jammu and Kashmir Bank","txn":"S68691632","date":"12/01/2026 15:21:PM","amt":20000.0,"cat":"atm","remarks":"-16670.41"},{"acct":"20152934255","bank":"State Bank of India","txn":"536107121673","date":"11/01/2026 09:24:AM","amt":500.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"5632473304","bank":"Central Bank of India","txn":"536107134116","date":"27/12/2025 15:54:PM","amt":1500.0,"cat":"atm","remarks":"ATM"},{"acct":"43682332270","bank":"State Bank of India","txn":"536107119726","date":"04/01/2026 19:13:PM","amt":500.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"40677101106356","bank":"Kerala Gramin Bank","txn":"536520506961","date":"01/01/2026 17:10:PM","amt":2500.0,"cat":"atm","remarks":"600117010114"},{"acct":"32551837715","bank":"State Bank of India","txn":"600619147656","date":"18/01/2026 10:55:AM","amt":3000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"74390100069527","bank":"Dakshin Bihar Gramin Bank","txn":"940685924857","date":"06/01/2026 16:43:PM","amt":15000.0,"cat":"atm","remarks":"ATM/CWDR/NC084600/3462/6079190856783164"},{"acct":"110119462747","bank":"Canara Bank (including Syndicate Bank)","txn":"600539459931","date":"05/01/2026 00:00:AM","amt":700.0,"cat":"atm","remarks":"CASH-00916324-GANDHINAGARUPPALNCRHYDERABADTSIN-05/01/26"},{"acct":"50969050027","bank":"Central Bank of India","txn":"72981034841","date":"21/01/2026 12:47:PM","amt":5000.0,"cat":"atm","remarks":"602105953936"},{"acct":"50969050027","bank":"Central Bank of India","txn":"72981034841","date":"21/01/2026 12:44:PM","amt":5000.0,"cat":"atm","remarks":"602105953936"},{"acct":"39840374460","bank":"State Bank of India","txn":"606920766531","date":"12/01/2026 14:19:PM","amt":3000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"4742201000013","bank":"Canara Bank (including Syndicate Bank)","txn":"BKIDA26071466451","date":"15/03/2026 00:00:AM","amt":4000.0,"cat":"atm","remarks":"DA 4000/-"},{"acct":"4742201000013","bank":"Canara Bank (including Syndicate Bank)","txn":"BKIDA26071466451","date":"16/03/2026 00:00:AM","amt":4000.0,"cat":"atm","remarks":"DA 4000/-"},{"acct":"32119476069","bank":"State Bank of India","txn":"218811903147","date":"04/02/2026 16:21:PM","amt":2000.0,"cat":"atm","remarks":"SUCCESS"},{"acct":"2448292634","bank":"Kotak Mahindra Bank","txn":"602610064689","date":"31/01/2026 11:33:AM","amt":3550.0,"cat":"atm","remarks":"ATL/7778/811211/SABIR HUSSAINGurgaonH310126/11:33"},{"acct":"8241611712","bank":"Indian Bank (including Allahabad Bank)","txn":"762672877615","date":"10/03/2026 07:17:AM","amt":10000.0,"cat":"atm","remarks":"TRAN DATE -(MMDD) 0310 TRAN TIME -(HHMMSS) 071745/SELF-FSS RAMANATHAPURAM RAMANA"},{"acct":"6370100082509","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"602610064458","date":"31/01/2026 12:04:PM","amt":4500.0,"cat":"atm","remarks":"603118419107"},{"acct":"10714600010265","bank":"DCB Bank (Development Credit Bank)","txn":"602116031348","date":"21/01/2026 17:03:PM","amt":50000.0,"cat":"pos","remarks":"0"},{"acct":"20025654796","bank":"State Bank of India","txn":"IOBAN25362328236","date":"28/12/2025 21:05:PM","amt":15000.0,"cat":"pos","remarks":""},{"acct":"8714700000985","bank":"DCB Bank (Development Credit Bank)","txn":"CBINN62025123080162811","date":"","amt":416000.0,"cat":"cheque","remarks":"0"},{"acct":"50200083944033","bank":"HDFC Bank","txn":"SBIN326048569375","date":"18/02/2026 15:21:PM","amt":200000.0,"cat":"cheque","remarks":"MOHAMMAD ASALAM - CHQ PAID - RAJA BAZAR B"},{"acct":"50200083944033","bank":"HDFC Bank","txn":"SBIN326048569375","date":"18/02/2026 13:05:PM","amt":300000.0,"cat":"cheque","remarks":"SHAHID IMAMA - CHQ PAID - RAJA BAZAR B"},{"acct":"427202010104941","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","txn":"116433744171","date":"21/01/2026 11:35:AM","amt":20000.0,"cat":"cheque","remarks":"Avl. Bal: 0.00"},{"acct":"8199431475","bank":"Indian Bank (including Allahabad Bank)","txn":"CBINN62026010214454111","date":"02/01/2026 00:00:AM","amt":500000.0,"cat":"cheque","remarks":"CASH WDL/KANGEYAM ROAD"},{"acct":"1349101326998","bank":"Canara Bank (including Syndicate Bank)","txn":"600539450347","date":"07/01/2026 00:00:AM","amt":150000.0,"cat":"cheque","remarks":""},{"acct":"20275612640","bank":"Fino Payments Bank","txn":"850491902987","date":"29/12/2025 17:40:00","amt":4500.0,"cat":"cust","remarks":"136926253630238685"},{"acct":"2502418098957393","bank":"AU Bank","txn":"BKIDJ26020627550","date":"25/02/2026 07:26:23","amt":250005.0,"cat":"other","remarks":"We are unable to process your request at the moment due to technical issues. We "},{"acct":"79044308892","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","txn":"536107658460","date":"25/02/2026 08:46:05","amt":1086.4,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.1086.4/-"},{"acct":"10001291013360","bank":"Amazon Pay","txn":"385690611789","date":"25/02/2026 10:26:48","amt":3354.0,"cat":"other","remarks":"Regarding complaint 20202260010111 pertaining to your transaction for Rs. 3354, "},{"acct":"1055255368","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","txn":"600218362543","date":"25/02/2026 10:39:48","amt":10000.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.991.88/-"},{"acct":"163312301208996","bank":"KERALA STATE CO-OPERATIVE BANK","txn":"IOBAN26002076021","date":"25/02/2026 10:49:46","amt":1500.0,"cat":"other","remarks":"multiple transaction happened in this account and can not identify the particula"},{"acct":"18680100018517","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"535900023345","date":"25/02/2026 10:35:04","amt":1000.0,"cat":"other","remarks":"ACC NO: 18680100018517 /UPILITE LOAD TRANSACTION ON: 25-12-2025 /TRANSACTION AMO"},{"acct":"924020063866790","bank":"Axis Bank","txn":"CBINR52025123010000321","date":"25/02/2026 11:28:19","amt":1.0,"cat":"other","remarks":"kindly ignore this entry correct action taken on portal"},{"acct":"1.242E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"757341563615","date":"25/02/2026 11:29:24","amt":798.84,"cat":"other","remarks":"Multiple Low value debit transactions less then equal to 500"},{"acct":"57500001372151","bank":"Bajaj Finance Ltd.","txn":"102622390171","date":"25/02/2026 14:23:26","amt":610.0,"cat":"other","remarks":"We are unable to locate the transaction details through details mentioned in tra"},{"acct":"BD016001BAKAAAE1AX2W","bank":"ESAF Small Finance Bank","txn":"HGAKP0E4530180214918","date":"26/02/2026 03:34:30","amt":1500.0,"cat":"other","remarks":"Unable to find the transaction with the given details, please check and confirm "},{"acct":"76019628486","bank":"Uttarakhand Gramin Bank (including Uttaranchal Gramin Bank)","txn":"536106737133","date":"26/02/2026 11:48:25","amt":110.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.110/-"},{"acct":"405018289","bank":"ICICI Bank","txn":"1148160166","date":"26/02/2026 12:24:04","amt":21433.28,"cat":"other","remarks":"Account no 000405018289 in which amount is credited is a Merchant account in the"},{"acct":"50200027864076","bank":"LIFE INSURANCE CORPORATION","txn":"102309285763","date":"26/02/2026 16:26:59","amt":0.01,"cat":"other","remarks":"Kindly note ,no policy number is available in the complaint and we could not tra"},{"acct":"10000590180113","bank":"Suryoday Bank","txn":"858927292244","date":"26/02/2026 16:43:02","amt":8000.0,"cat":"other","remarks":"Fund settled collection GL account"},{"acct":"22019091531","bank":"Jharkhand Rajya Gramin Bank (Vananchal Gramin Bank)","txn":"536520528008","date":"26/02/2026 17:30:38","amt":9700.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.9700/-"},{"acct":"22019091531","bank":"Jharkhand Rajya Gramin Bank (Vananchal Gramin Bank)","txn":"536520528008","date":"26/02/2026 17:31:15","amt":10000.0,"cat":"other","remarks":"Cash taken thru bank and Dispute amount Rs.9700/-Txn date.31/12/25"},{"acct":"85020192042040","bank":"Uttar Pradesh Gramin Bank","txn":"394464690066","date":"26/02/2026 19:29:28","amt":3000.0,"cat":"other","remarks":"already lien marked in acknowledgement number 21601260000880"},{"acct":"102112250355","bank":"Shivalik Small Finance Bank.(Shivalik Mercantile Cooperative Bank)","txn":"YESAP60044355038","date":"27/02/2026 03:10:47","amt":5000.0,"cat":"other","remarks":"Duplicate entry lien has been marked on disputed amount same ack number 20202260"},{"acct":"14260100024896","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536106714989","date":"27/02/2026 08:14:45","amt":5000.0,"cat":"other","remarks":"Duplicate Transaction"},{"acct":"13104000475785","bank":"IDBI Bank","txn":"976706867463","date":"27/02/2026 15:38:23","amt":1999.5,"cat":"other","remarks":"Transaction not found on mentioned date. Kindly provide correct date and Tran id"},{"acct":"13104000475785","bank":"IDBI Bank","txn":"976706867463","date":"27/02/2026 15:40:33","amt":1999.5,"cat":"other","remarks":"Disputed amount caanot be more than transaction amount.Transaction amount not ma"},{"acct":"1425000000051","bank":"Paytm Payment Bank","txn":"199082818317","date":"27/02/2026 15:47:37","amt":1500.0,"cat":"other","remarks":"This transaction is not associated with Paytm Payments Bank. kindly reach out to"},{"acct":"XXXXXXXXXXXX7528","bank":"Axis Bank","txn":"DP015361224311ylbb2z","date":"27/02/2026 16:54:14","amt":884.94,"cat":"other","remarks":"credit card bill payment towards card number 4400060118177528 recommedned for ca"},{"acct":"57500001372151","bank":"Bajaj Finance Ltd.","txn":"102622390171","date":"27/02/2026 17:38:22","amt":610.0,"cat":"other","remarks":"We are unable to locate the transaction details through details mentioned in tra"},{"acct":"26808100013764","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"815802400110","date":"27/02/2026 18:18:35","amt":600.0,"cat":"other","remarks":"ACC NO:26808100013764/ UPILITE/LOAD TRANSACTION DONE AS ON DT.27-12-2025/ TRANS "},{"acct":"27401291012012","bank":"Axis Bank","txn":"S3274317","date":"27/02/2026 23:26:16","amt":200000.0,"cat":"other","remarks":"we are not authorized to mark lien freeze in Collection/Pool account."},{"acct":"33325229145171","bank":"NORTH EAST SMALL FINANCE BANK","txn":"536002960764","date":"27/02/2026 23:54:02","amt":21000.0,"cat":"other","remarks":"Amount was utilized for making loan repayment which user borrowed from North Eas"},{"acct":"309030121465","bank":"Ratnakar Bank Limited (RBL)","txn":"535813135979","date":"28/02/2026 10:22:45","amt":72489.0,"cat":"other","remarks":"For the given transaction we provide the outward but for the left balance there "},{"acct":"1677900000042","bank":"Yes Bank","txn":"810399006442","date":"28/02/2026 15:45:00","amt":0.42,"cat":"other","remarks":"DA RS. 0.42 / Closed in other As DA is below 500"},{"acct":"924010053064415","bank":"Axis Bank","txn":"605008973909","date":"01/03/2026 11:19:04","amt":499999.0,"cat":"other","remarks":"Kindly provide correct Transaction id for the further action"},{"acct":"783418210000215","bank":"Bank of India","txn":"485483804414","date":"02/03/2026 08:19:41","amt":485.0,"cat":"other","remarks":"low value"},{"acct":"783418210000215","bank":"Bank of India","txn":"485483804414","date":"02/03/2026 08:19:59","amt":100.0,"cat":"other","remarks":"low value"},{"acct":"110111689814","bank":"Canara Bank (including Syndicate Bank)","txn":"YESAP60223650075","date":"02/03/2026 13:50:15","amt":435.0,"cat":"other","remarks":"LOW VALUE TRANSANCTION"},{"acct":"168812301205865","bank":"KERALA STATE CO-OPERATIVE BANK","txn":"PKGBH25361897910","date":"02/03/2026 16:48:03","amt":529.12,"cat":"other","remarks":"multiple transaction happened in this account and can not identify the particula"},{"acct":"2521711906513","bank":"Jio Payments Bank Ltd","txn":"602500133758","date":"04/03/2026 10:52:07","amt":14000.0,"cat":"other","remarks":"Dear team, with the provided rrn number we are not match amount to find the deti"},{"acct":"421711859967","bank":"Jio Payments Bank Ltd","txn":"572792315423","date":"04/03/2026 10:53:44","amt":700.0,"cat":"other","remarks":"Dear Team,with the provided details we are unable to fetch transactions kindly p"},{"acct":"80310001015226","bank":"Deogiri Nagari Sahakari Bank Ltd. Aurangabad.","txn":"696323061449","date":"05/03/2026 16:20:22","amt":1000.0,"cat":"other","remarks":"lien"},{"acct":"49818100010217","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"637140342359","date":"06/03/2026 12:02:52","amt":700.0,"cat":"other","remarks":"Duplicate transaction/ data already submitted"},{"acct":"2541109900110151","bank":"Amazon Pay","txn":"719613724279","date":"06/03/2026 12:18:36","amt":1000.0,"cat":"other","remarks":"Regarding complaint 20202260010111 for Rs.1000 was paid in relation to an order "},{"acct":"29138100020103","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536131089675","date":"06/03/2026 12:37:44","amt":500.0,"cat":"other","remarks":"A/C NO : 29138100020103 / TXN ID : 920191043615 / TXN DATE : 27-12-2025 / UPI LI"},{"acct":"29138100020103","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"536131089675","date":"06/03/2026 12:38:49","amt":500.0,"cat":"other","remarks":"acc no: 29138100020103 / upi lite load tran id: 920191043615 / tran date: 27-12-"},{"acct":"XXXXXXXXXXXX5108","bank":"State Bank of India (Credit card)","txn":"DP016005110451p1MuIh","date":"06/03/2026 12:58:08","amt":1540.0,"cat":"other","remarks":"Hi Team, necessary action has been taken, and the cardholders account has been b"},{"acct":"435000100546493","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"879265771091","date":"06/03/2026 13:18:41","amt":30.52,"cat":"other","remarks":"Lien noted on avl bal"},{"acct":"405018289","bank":"ICICI Bank","txn":"1142115792","date":"06/03/2026 13:18:53","amt":1280.73,"cat":"other","remarks":"DA-1280.73/ credit in 000405018289 M/S.ICICI BANK LTD-COLL.CREDIT CARD ACQU.A/C "},{"acct":"921020035862019","bank":"Axis Bank","txn":"0BKIDR52025122600884463","date":"06/03/2026 15:51:49","amt":300004.0,"cat":"other","remarks":"This is an Trust Account, so we cannot marked Lien or Freeze."},{"acct":"7013435700","bank":"Chhattisgarh Gramin Bank(CGB)","txn":"600539464246","date":"06/03/2026 18:29:02","amt":1011.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.1011/-"},{"acct":"77059041584","bank":"Chhattisgarh Gramin Bank(CGB)","txn":"242163448579","date":"06/03/2026 18:56:18","amt":2000.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.1011/-"},{"acct":"87005137900","bank":"Meghalaya Rural Bank","txn":"536107116085","date":"06/03/2026 21:18:45","amt":525.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.525/-"},{"acct":"73355364925","bank":"Flipkart","txn":"YESAP60095785688","date":"07/03/2026 11:33:33","amt":3945.0,"cat":"other","remarks":"Delivered"},{"acct":"503120110000597","bank":"Bank of India","txn":"sbinr52026010511751160","date":"07/03/2026 12:31:33","amt":500000.0,"cat":"other","remarks":"duplicate entry"},{"acct":"79088449866","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","txn":"93242004133","date":"07/03/2026 12:52:36","amt":3000.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.3000/-"},{"acct":"3773630362","bank":"Central Bank of India","txn":"536107129048","date":"07/03/2026 12:53:45","amt":1000.0,"cat":"other","remarks":"NO ANY DEBIT TRANSACTION IN THIS ACCOUNT AFTER THIS DATE AND AMT HOLD IN BEFORE "},{"acct":"3218000283","bank":"AIRPAY","txn":"553509811484","date":"11/03/2026 12:31:40","amt":8500.0,"cat":"other","remarks":"553509811484"},{"acct":"60262304264","bank":"Bank of Maharashtra","txn":"536382463003","date":"13/03/2026 13:21:57","amt":4000.0,"cat":"other","remarks":"Duplicate RRN transaction already Updated"},{"acct":"XXXXXXXXXXXX7038","bank":"Ratnakar Bank Limited (RBL)","txn":"EU015363T36606868396","date":"13/03/2026 15:42:45","amt":5600.0,"cat":"other","remarks":"Found this amt. Rs.5600 with txn. Id:363T36606868396 dated: 29-Dec-25 received a"},{"acct":"2071121000093","bank":"AIRPAY","txn":"446670530886","date":"13/03/2026 18:42:08","amt":100.0,"cat":"other","remarks":"446670530886 duplicate transaction already closed"},{"acct":"65102200036400","bank":"Canara Bank (including Syndicate Bank)","txn":"591631772","date":"16/03/2026 16:07:10","amt":1220408.0,"cat":"other","remarks":"EFS. By Xfer. From CASA. 164116710602 -REVATHI S"},{"acct":"2071121000009","bank":"Jio Payment Solutions Limited","txn":"708657904510","date":"17/03/2026 16:33:47","amt":1000.0,"cat":"other","remarks":"Your request has been acknowledged. We have taken this up with the concerned tea"},{"acct":"2071121000009","bank":"Jio Payment Solutions Limited","txn":"110730730823","date":"17/03/2026 16:33:14","amt":1000.0,"cat":"other","remarks":"Your request has been acknowledged. We have taken this up with the concerned tea"},{"acct":"2071121000066","bank":"Jio Payment Solutions Limited","txn":"396097248110","date":"18/03/2026 00:52:48","amt":1000.0,"cat":"other","remarks":"Your request has been acknowledged. We have taken this up with the concerned tea"},{"acct":"259289675887","bank":"IndusInd Bank","txn":"BKIDR52026012600260685","date":"23/03/2026 10:29:10","amt":500000.0,"cat":"other","remarks":"already details shared on 23/03/2026 10:28:AM"},{"acct":"67640100012108","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"203987719739","date":"23/03/2026 10:45:38","amt":543.93,"cat":"other","remarks":"ACC no:67640100012108/ UPI LITE LOAD Transaction on 26-01-2026 / transaction Amo"},{"acct":"16103760001142","bank":"IDBI Bank","txn":"602610064510","date":"23/03/2026 10:52:32","amt":100.0,"cat":"other","remarks":"this ifsc of Janata Sahakari Bank Ltd Kindly forward to that bank reassign back "},{"acct":"16103760001142","bank":"Janata Sahakari Bank Ltd., Ajara","txn":"602610064841","date":"23/03/2026 11:03:15","amt":300.0,"cat":"other","remarks":"Amount withdraw through the UPI on same RRN 602659430934 and 918137368683 and am"},{"acct":"819201000493","bank":"Canara Bank (including Syndicate Bank)","txn":"YESAP60294828815","date":"23/03/2026 11:25:35","amt":560.0,"cat":"other","remarks":"Amount credited to merchant settlement account number KERALA STATE BEVERAGES COR"},{"acct":"20202260010111","bank":"Bank of India","txn":"59158432933","date":"23/03/2026 11:29:38","amt":600.0,"cat":"other","remarks":"No Tran details"},{"acct":"10002228599","bank":"IDFC First Bank","txn":"603729627465","date":"23/03/2026 11:47:25","amt":1686.55,"cat":"other","remarks":"We have marked a lien on the disputed amount, which has been credited to BLACKBU"},{"acct":"342005000002","bank":"ICICI Bank","txn":"UTIBR72026012700078737","date":"23/03/2026 12:13:06","amt":11557.0,"cat":"other","remarks":"Account no 342005000002 name M/S.FINCFRIENDS PVT LTD (RE-PAYMENT) A/C, Kindly Co"},{"acct":"6410910000417","bank":"Kotak Mahindra Bank","txn":"106076046996","date":"23/03/2026 13:56:34","amt":1000.0,"cat":"other","remarks":"in kotak nodal account"},{"acct":"84066259135","bank":"Jharkhand Rajya Gramin Bank (Vananchal Gramin Bank)","txn":"602610064648","date":"23/03/2026 14:53:06","amt":22750.0,"cat":"other","remarks":"Funds not available, Account kept on hold for Rs.22750/-"},{"acct":"133710801200079","bank":"KERALA STATE CO-OPERATIVE BANK","txn":"CIUBH26026010947","date":"23/03/2026 16:52:18","amt":1229.16,"cat":"other","remarks":"Due to multiple transactions in the A/c , unable to identify in which transactio"},{"acct":"10002228599","bank":"IDFC First Bank","txn":"603729627465","date":"24/03/2026 10:18:54","amt":1686.55,"cat":"other","remarks":"The funds has been utilized INR 1686.55/- for recharge from blackbugs , find att"},{"acct":"80800402821690","bank":"Sarva Haryana Gramin Bank (including Haryana Gramin Bank)","txn":"493682240076","date":"24/03/2026 10:32:55","amt":594.0,"cat":"other","remarks":"NEEDFUL HAVE DONE"},{"acct":"925020036182237","bank":"Axis Bank","txn":"CBINR12026010510028312","date":"25/02/2026 00:02:AM","amt":0,"cat":"others500","remarks":"POKHAR"},{"acct":"925020036182237","bank":"Axis Bank","txn":"CBINR12026010510028312","date":"25/02/2026 00:02:AM","amt":0,"cat":"others500","remarks":"DADARAV BHAGAVAN PAVAR"},{"acct":"782104000498173","bank":"IDBI Bank","txn":"600541677516","date":"25/02/2026 00:08:AM","amt":0,"cat":"others500","remarks":"UPI/803063322991/MUFINPAY"},{"acct":"782104000498173","bank":"IDBI Bank","txn":"600541677516","date":"25/02/2026 00:08:AM","amt":0,"cat":"others500","remarks":"UPI/403493848071/MUFINPAY"},{"acct":"782104000498173","bank":"IDBI Bank","txn":"600541677516","date":"25/02/2026 00:08:AM","amt":0,"cat":"others500","remarks":"UPI/600675078849/XPRESSBUY TECHNOLOGY PRIVATE LIMI"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"600541677889","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"4068101001931","bank":"Canara Bank (including Syndicate Bank)","txn":"600541677879","date":"25/02/2026 00:10:AM","amt":0,"cat":"others500","remarks":"UPI/DR/565441250865/MOHAMMED /IPOS/**25569@YBL/PAYMENT //AXL59DAC8DDBD0449C78514"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"RENU"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mrs. Shalani Shalani"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mr. RUSHEEKESH ANIL NAGPURE"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"SATRUGHNA PRADHAN"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mr. P PREM KUMAR"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mr. IMRAN KHAN"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mrs. CHAMPA BHIKU PATEL"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Muthukumaran Jagannathan"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"DEEPAK KUMAR"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Md Tahsin"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Madan"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Chunara Kishanbhai"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Raju Sk"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Vijay Kumar Ray"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Jitendra Kumar Saini"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Shishupal Kumar"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Ganesh Kumar Jat"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Manish Kumar Chiraniya"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Devendra Kirar"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Mithun"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:24:AM","amt":0,"cat":"others500","remarks":"Shiv Poojan Gautam"},{"acct":"110273303670","bank":"Canara Bank (including Syndicate Bank)","txn":"536107662245","date":"25/02/2026 00:26:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:26:AM","amt":0,"cat":"others500","remarks":"Munendra Kumar"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:26:AM","amt":0,"cat":"others500","remarks":"VAGHELA RAJUBHAI"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:26:AM","amt":0,"cat":"others500","remarks":"PAVAN JITUBHAI PADHIYAR"},{"acct":"925020038972173","bank":"Axis Bank","txn":"CBINR12025122710003930","date":"25/02/2026 00:26:AM","amt":0,"cat":"others500","remarks":"Balram Singh Rathour"},{"acct":"110024912183","bank":"Canara Bank (including Syndicate Bank)","txn":"536107657618","date":"25/02/2026 00:30:AM","amt":0,"cat":"others500","remarks":"UPI/DR/572756707717/DUMMY NAME/CNRB/**012200019064/UPI//AXI74B071DD5DEB4D2FBDD2B"},{"acct":"490001700038589","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107663345","date":"25/02/2026 00:30:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"490001700038589","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"536107663345","date":"25/02/2026 00:30:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"326104000073626","bank":"IDBI Bank","txn":"536107656866","date":"25/02/2026 00:30:AM","amt":0,"cat":"others500","remarks":"UPI/536211938316/SUSHANT KUMAR THAKUR"},{"acct":"326104000073626","bank":"IDBI Bank","txn":"536107656970","date":"25/02/2026 00:30:AM","amt":0,"cat":"others500","remarks":"UPI/536211938316/SUSHANT KUMAR THAKUR"},{"acct":"925010015524796","bank":"Axis Bank","txn":"116265729802","date":"25/02/2026 00:36:AM","amt":0,"cat":"others500","remarks":"7400928562@ptyes"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"453658994491","date":"25/02/2026 00:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"925020014967397","bank":"Axis Bank","txn":"IDIBR52026011049729253","date":"25/02/2026 00:54:AM","amt":0,"cat":"others500","remarks":"ASHABEN AJAYBHAI KANGSIYA"},{"acct":"902055001003881","bank":"ICICI Bank","txn":"536275790393","date":"25/02/2026 00:55:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"39305007322","bank":"ICICI Bank","txn":"536235142559","date":"25/02/2026 00:58:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"100187550678","bank":"IndusInd Bank","txn":"536107662132","date":"25/02/2026 01:28:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"41347047586","bank":"State Bank of India","txn":"297462435000","date":"25/02/2026 06:24:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"4290110146736","bank":"UCO Bank","txn":"116743289789","date":"25/02/2026 06:45:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"1.637E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"287557212407","date":"25/02/2026 07:10:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/668283196313/gpay-11262036803@okbizax/5812"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/692370954024/POCKETFMONLINE@ybl/Payme/5733"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/832353916136/sanjibparida1983-1@okhdf/0000"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/612829626207/gpay-11262036803@okbizax/5812"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/840258619143/9078863724-2@ibl/Payment/0000"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/141746770896/Q156697893@ybl/Payment f/5411"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/275076672678/gpay-11262036803@okbizax/5812"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:16:AM","amt":0,"cat":"others500","remarks":"UPIOUT/542087487700/9078863724-2@ibl/Payment/0000"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/174128926077/6087XZ8789@mairtel/Payme/5814"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/842542403183/POCKETFMONLINE@axl/Payme/5733"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/800343501178/sanjibparida1983-1@okhdf/0000"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/105544310493/5009B061F1@mairtel/Payme/5814"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/032077492851/5009B061F1@mairtel/Payme/5814"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/534234407042/5009B061F1@mairtel/Payme/5814"},{"acct":"19300100050742","bank":"Federal Bank","txn":"737587450616","date":"25/02/2026 07:18:AM","amt":0,"cat":"others500","remarks":"UPIOUT/201349902316/POCKETFMONLINE@ybl/Payme/5733"},{"acct":"6009001500027604","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"762188908195","date":"25/02/2026 07:42:AM","amt":0,"cat":"others500","remarks":"Low value transaction less then equal to 500"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/072737067076/INDRRDESI/YESB/**33040@YESBANK/UPI INTE//AXL5271963F5B5F4674"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/968976861599/INDRRDESI/YESB/**33040@YESBANK/UPI INTE//AXLC02E68D9F0CF47A3"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/287030043373/620547662/AIRP/**76621@PTYES/7WP4IG//AXL02D54F6B6A7F47F3A941"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/966004233809/GOLLA JYO/UBIN/**09456@PTAXIS/7WPG93//AXL2E35A796F35C4E1C9A6"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/456791363459/VASUPILLI/AIRP/**71164@MBKNS/7WPRNZ//AXLC92C10E56A2244C9B1E6"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/009202846311/NARAYAN K/IPOS/**84263@IKWIK/7WQ1OY//AXL59F0B3FC5A8543E8AA6E"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","txn":"535900026457","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI/DR/763607743199/GARVIT/SURY/**689-3@YBL/7WUA0O//AXLADABE8FF125F434D89C7EABA3"},{"acct":"1257010189200","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900026451","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"1257010189200","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900026451","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"1257010189200","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900026451","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"1381000100135667","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024908","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"1381000100135667","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024908","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"1381000100135667","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024908","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"1381000100135667","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024908","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"7318000100066392","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900025859","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"7318000100066392","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900025859","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"387200100016019","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024905","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2V:N:MOBIN"},{"acct":"387200100016019","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900024905","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","txn":"535900023541","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"UPI:DR:P2M:N:MOBIN"},{"acct":"12640100020163","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","txn":"297344092704","date":"25/02/2026 09:40:AM","amt":0,"cat":"others500","remarks":"Available Balance: 0.00"},{"acct":"WAL12345678","bank":"Amount frozen","txn":"UTR9876543210","date":"2026-03-01","amt":5000.0,"cat":"monthly","remarks":"Fraud suspected"},{"acct":"PG87654321","bank":"Reversed","txn":"UTR1234509876","date":"2026-03-02","amt":7500.0,"cat":"monthly","remarks":"Unauthorized txn"},{"acct":"PA11223344","bank":"Under investigation","txn":"UTR5678901234","date":"2026-03-03","amt":12000.0,"cat":"monthly","remarks":"Scam complaint"},{"acct":"WAL99887766","bank":"Refunded","txn":"UTR3456789012","date":"2026-03-04","amt":2000.0,"cat":"monthly","remarks":"Duplicate txn"},{"acct":"PG55667788","bank":"Pending","txn":"UTR9012345678","date":"2026-03-05","amt":9800.0,"cat":"monthly","remarks":"Payment failed"},{"acct":"PA44332211","bank":"Amount held","txn":"UTR7890123456","date":"2026-03-06","amt":4300.0,"cat":"monthly","remarks":"Fraud alert"},{"acct":"WAL66554433","bank":"Processing","txn":"UTR6543210987","date":"2026-03-07","amt":15000.0,"cat":"monthly","remarks":"Unauthorized debit"},{"acct":"PG33445566","bank":"Refunded","txn":"UTR4321098765","date":"2026-03-08","amt":2700.0,"cat":"monthly","remarks":"System error"},{"acct":"PA77889900","bank":"Investigation ongoing","txn":"UTR2109876543","date":"2026-03-09","amt":8900.0,"cat":"monthly","remarks":"Suspicious txn"},{"acct":"WAL11224455","bank":"Amount reversed","txn":"UTR1098765432","date":"2026-03-10","amt":6100.0,"cat":"monthly","remarks":"Fraud complaint"},{"acct":"40677101106356","bank":"Indian Clearing Corporation Ltd","txn":"ACHDRTPZ0000009580","date":"09/03/2026 17:34:46","amt":0.0,"cat":"rejected","remarks":"dear team, mentioned account number does not belongs to iccl, kindly provide cor"}];
+let ACCTS = [{"acct":"50200083944033","bank":"HDFC Bank","cats":["cheque","atm"],"txns":3,"total":550000.0,"risk":88,"level":"critical","freeze":"CRITICAL"},{"acct":"110201000054816","bank":"Indian Overseas Bank","cats":["atm"],"txns":6,"total":15162.84,"risk":51,"level":"medium","freeze":"MEDIUM"},{"acct":"8714700000985","bank":"DCB Bank (Development Credit Bank)","cats":["cheque"],"txns":1,"total":416000.0,"risk":51,"level":"medium","freeze":"MEDIUM"},{"acct":"8199431475","bank":"Indian Bank (including Allahabad Bank)","cats":["cheque"],"txns":1,"total":500000.0,"risk":51,"level":"medium","freeze":"MEDIUM"},{"acct":"65102200036400","bank":"Canara Bank (including Syndicate Bank)","cats":["other"],"txns":1,"total":1220408.0,"risk":48,"level":"medium","freeze":"MEDIUM"},{"acct":"40508100016934","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["aeps"],"txns":4,"total":40000.0,"risk":45,"level":"medium","freeze":"MEDIUM"},{"acct":"77059041584","bank":"Chhattisgarh Gramin Bank(CGB)","cats":["aeps","other"],"txns":2,"total":12000.0,"risk":43,"level":"medium","freeze":"MEDIUM"},{"acct":"100049372949","bank":"IndusInd Bank","cats":["atm"],"txns":4,"total":38000.0,"risk":43,"level":"medium","freeze":"MEDIUM"},{"acct":"66340100006184","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["atm"],"txns":5,"total":32400.0,"risk":43,"level":"medium","freeze":"MEDIUM"},{"acct":"1349101326998","bank":"Canara Bank (including Syndicate Bank)","cats":["cheque"],"txns":1,"total":150000.0,"risk":43,"level":"medium","freeze":"MEDIUM"},{"acct":"39398052082","bank":"State Bank of India","cats":["atm","hold"],"txns":2,"total":1559.47,"risk":36,"level":"low","freeze":"LOW"},{"acct":"40677101106356","bank":"Indian Clearing Corporation Ltd","cats":["atm","rejected"],"txns":2,"total":2500.0,"risk":36,"level":"low","freeze":"LOW"},{"acct":"2076201700053137","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500","hold"],"txns":7,"total":30.91,"risk":36,"level":"low","freeze":"LOW"},{"acct":"838201700004685","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500","hold"],"txns":6,"total":23.14,"risk":36,"level":"low","freeze":"LOW"},{"acct":"100282950090","bank":"IndusInd Bank","cats":["aeps"],"txns":3,"total":30000.0,"risk":35,"level":"low","freeze":"LOW"},{"acct":"9006273679","bank":"Airtel Payments Bank","cats":["aeps"],"txns":2,"total":11050.0,"risk":35,"level":"low","freeze":"LOW"},{"acct":"50100777514834","bank":"HDFC Bank","cats":["atm"],"txns":3,"total":25000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"25370100020419","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["atm"],"txns":2,"total":20000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"11540110076101","bank":"UCO Bank","cats":["atm"],"txns":2,"total":50000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"157601000051308","bank":"Indian Overseas Bank","cats":["atm"],"txns":2,"total":23300.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"6236615844","bank":"Indian Bank (including Allahabad Bank)","cats":["atm"],"txns":2,"total":21000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"8208650988","bank":"Indian Bank (including Allahabad Bank)","cats":["atm"],"txns":2,"total":21000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"8202036462","bank":"Indian Bank (including Allahabad Bank)","cats":["atm"],"txns":3,"total":22400.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"181100050321449","bank":"Tamilnad Mercantile Bank Ltd.","cats":["atm"],"txns":2,"total":20027.14,"risk":33,"level":"low","freeze":"LOW"},{"acct":"44640482249","bank":"State Bank of India","cats":["atm"],"txns":2,"total":20000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"37272450401","bank":"State Bank of India","cats":["atm"],"txns":2,"total":11000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"1900101023391","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":2,"total":40000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"1900101020212","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":2,"total":40000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"174010100001314","bank":"Jammu and Kashmir Bank","cats":["atm"],"txns":2,"total":40000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"2502418098957393","bank":"AU Bank","cats":["other"],"txns":1,"total":250005.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"924010053064415","bank":"Axis Bank","cats":["other"],"txns":1,"total":499999.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"921020035862019","bank":"Axis Bank","cats":["other"],"txns":1,"total":300004.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"503120110000597","bank":"Bank of India","cats":["other"],"txns":1,"total":500000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"259289675887","bank":"IndusInd Bank","cats":["other"],"txns":1,"total":500000.0,"risk":33,"level":"low","freeze":"LOW"},{"acct":"427202010104941","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["cheque"],"txns":1,"total":20000.0,"risk":30,"level":"low","freeze":"LOW"},{"acct":"782104000498173","bank":"IDBI Bank","cats":["others500","hold"],"txns":4,"total":63.89,"risk":28,"level":"low","freeze":"LOW"},{"acct":"50969050027","bank":"Central Bank of India","cats":["atm"],"txns":2,"total":10000.0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"4742201000013","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":2,"total":8000.0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"925020038972173","bank":"Axis Bank","cats":["others500"],"txns":25,"total":0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"19300100050742","bank":"Federal Bank","cats":["others500"],"txns":15,"total":0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"3947101001082","bank":"Canara Bank (including Syndicate Bank)","cats":["others500"],"txns":7,"total":0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"2620000100095805","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":8,"total":0,"risk":28,"level":"low","freeze":"LOW"},{"acct":"11111111111111","bank":"HDFC Bank","cats":["atm"],"txns":1,"total":25000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"309027602386","bank":"Ratnakar Bank Limited (RBL)","cats":["atm"],"txns":1,"total":20000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"221711345148","bank":"Jio Payments Bank Ltd","cats":["atm"],"txns":1,"total":10027.14,"risk":26,"level":"low","freeze":"LOW"},{"acct":"50100825828712","bank":"HDFC Bank","cats":["atm"],"txns":1,"total":20000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"74390100069527","bank":"Dakshin Bihar Gramin Bank","cats":["atm"],"txns":1,"total":15000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"10714600010265","bank":"DCB Bank (Development Credit Bank)","cats":["pos"],"txns":1,"total":50000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"20025654796","bank":"State Bank of India","cats":["pos"],"txns":1,"total":15000.0,"risk":26,"level":"low","freeze":"LOW"},{"acct":"27401291012012","bank":"Axis Bank","cats":["other"],"txns":1,"total":200000.0,"risk":25,"level":"low","freeze":"LOW"},{"acct":"16892311001835","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["aeps"],"txns":1,"total":5500.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"664302120001449","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["aeps"],"txns":1,"total":1300.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"3957427239","bank":"Central Bank of India","cats":["aeps"],"txns":1,"total":2000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"1174201700020498","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["aeps"],"txns":1,"total":2000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"9628914398","bank":"Airtel Payments Bank","cats":["aeps"],"txns":1,"total":2300.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"10220100024706","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["aeps"],"txns":1,"total":8000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"435202120043419","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["aeps"],"txns":1,"total":5000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"99980107144946","bank":"Federal Bank","cats":["aeps"],"txns":1,"total":1020.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"1441001700246716","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["aeps"],"txns":1,"total":5000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"3612973076","bank":"Central Bank of India","cats":["aeps"],"txns":1,"total":3000.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"9598100063838","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["aeps"],"txns":1,"total":1500.0,"risk":23,"level":"low","freeze":"LOW"},{"acct":"158882139091","bank":"IndusInd Bank","cats":["atm"],"txns":1,"total":4500.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"17901000070450","bank":"Indian Overseas Bank","cats":["atm"],"txns":1,"total":9027.14,"risk":21,"level":"low","freeze":"LOW"},{"acct":"1186110190060497","bank":"Ujjivan Small Finance Bank Ltd","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"734110110014317","bank":"Bank of India","cats":["atm"],"txns":1,"total":5000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"80061900032201","bank":"Sarva Haryana Gramin Bank (including Haryana Gramin Bank)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"41434923577","bank":"State Bank of India","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"2979108072321","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"1929001500013346","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"4199000100045067","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"110089698589","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":1,"total":3000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"16990100013609","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["atm"],"txns":1,"total":2000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"194110100079821","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["atm"],"txns":1,"total":7900.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"31001014150","bank":"The Mehsana Urban Co-Op. Bank","cats":["atm"],"txns":1,"total":5000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"61562610002050","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":1,"total":4500.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"32943487095","bank":"State Bank of India","cats":["atm"],"txns":1,"total":2000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"11586279153","bank":"State Bank of India","cats":["atm"],"txns":1,"total":7000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"98310100007841","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"257040100009451","bank":"Jammu and Kashmir Bank","cats":["atm"],"txns":1,"total":4500.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"5632473304","bank":"Central Bank of India","cats":["atm"],"txns":1,"total":1500.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"32551837715","bank":"State Bank of India","cats":["atm"],"txns":1,"total":3000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"39840374460","bank":"State Bank of India","cats":["atm"],"txns":1,"total":3000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"32119476069","bank":"State Bank of India","cats":["atm"],"txns":1,"total":2000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"2448292634","bank":"Kotak Mahindra Bank","cats":["atm"],"txns":1,"total":3550.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"8241611712","bank":"Indian Bank (including Allahabad Bank)","cats":["atm"],"txns":1,"total":10000.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"6370100082509","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["atm"],"txns":1,"total":4500.0,"risk":21,"level":"low","freeze":"LOW"},{"acct":"1381000100135667","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":4,"total":0,"risk":20,"level":"low","freeze":"LOW"},{"acct":"405018289","bank":"ICICI Bank","cats":["other"],"txns":2,"total":22714.01,"risk":19,"level":"low","freeze":"LOW"},{"acct":"22019091531","bank":"Jharkhand Rajya Gramin Bank (Vananchal Gramin Bank)","cats":["other"],"txns":2,"total":19700.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"RCMBHI116552","bank":"HDFC Bank","cats":["aeps"],"txns":1,"total":1.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"407702011015663","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["aeps"],"txns":1,"total":700.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"7942001700037301","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["aeps"],"txns":1,"total":500.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"9572374503","bank":"Airtel Payments Bank","cats":["aeps"],"txns":1,"total":1000.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"2801001700190791","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["aeps"],"txns":1,"total":1000.0,"risk":19,"level":"low","freeze":"LOW"},{"acct":"4068101001931","bank":"Canara Bank (including Syndicate Bank)","cats":["others500","hold"],"txns":2,"total":22.61,"risk":18,"level":"low","freeze":"LOW"},{"acct":"110273303670","bank":"Canara Bank (including Syndicate Bank)","cats":["others500","hold"],"txns":2,"total":35.99,"risk":18,"level":"low","freeze":"LOW"},{"acct":"110024912183","bank":"Canara Bank (including Syndicate Bank)","cats":["others500","hold"],"txns":2,"total":592.76,"risk":18,"level":"low","freeze":"LOW"},{"acct":"309030121465","bank":"Ratnakar Bank Limited (RBL)","cats":["other"],"txns":1,"total":72489.0,"risk":18,"level":"low","freeze":"LOW"},{"acct":"726318210013323","bank":"Bank of India","cats":["atm"],"txns":1,"total":1000.0,"risk":17,"level":"low","freeze":"LOW"},{"acct":"10002679868","bank":"IDFC First Bank","cats":["atm"],"txns":1,"total":500.0,"risk":17,"level":"low","freeze":"LOW"},{"acct":"20152934255","bank":"State Bank of India","cats":["atm"],"txns":1,"total":500.0,"risk":17,"level":"low","freeze":"LOW"},{"acct":"43682332270","bank":"State Bank of India","cats":["atm"],"txns":1,"total":500.0,"risk":17,"level":"low","freeze":"LOW"},{"acct":"110119462747","bank":"Canara Bank (including Syndicate Bank)","cats":["atm"],"txns":1,"total":700.0,"risk":17,"level":"low","freeze":"LOW"},{"acct":"57500001372151","bank":"Bajaj Finance Ltd.","cats":["other"],"txns":2,"total":1220.0,"risk":14,"level":"low","freeze":"LOW"},{"acct":"13104000475785","bank":"IDBI Bank","cats":["other"],"txns":2,"total":3999.0,"risk":14,"level":"low","freeze":"LOW"},{"acct":"2071121000009","bank":"Jio Payment Solutions Limited","cats":["other"],"txns":2,"total":2000.0,"risk":14,"level":"low","freeze":"LOW"},{"acct":"10002228599","bank":"IDFC First Bank","cats":["other"],"txns":2,"total":3373.1,"risk":14,"level":"low","freeze":"LOW"},{"acct":"33325229145171","bank":"NORTH EAST SMALL FINANCE BANK","cats":["other"],"txns":1,"total":21000.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"2521711906513","bank":"Jio Payments Bank Ltd","cats":["other"],"txns":1,"total":14000.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"342005000002","bank":"ICICI Bank","cats":["other"],"txns":1,"total":11557.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"84066259135","bank":"Jharkhand Rajya Gramin Bank (Vananchal Gramin Bank)","cats":["other"],"txns":1,"total":22750.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"PA11223344","bank":"Under investigation","cats":["monthly"],"txns":1,"total":12000.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"WAL66554433","bank":"Processing","cats":["monthly"],"txns":1,"total":15000.0,"risk":12,"level":"low","freeze":"LOW"},{"acct":"783418210000215","bank":"Bank of India","cats":["other"],"txns":2,"total":585.0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"29138100020103","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":2,"total":1000.0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"16103760001142","bank":"Janata Sahakari Bank Ltd., Ajara","cats":["other"],"txns":2,"total":400.0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"925020036182237","bank":"Axis Bank","cats":["others500"],"txns":2,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"490001700038589","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":2,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"326104000073626","bank":"IDBI Bank","cats":["others500"],"txns":2,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"1257010189200","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":3,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"7318000100066392","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":2,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"387200100016019","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":2,"total":0,"risk":10,"level":"low","freeze":"LOW"},{"acct":"399040100003152","bank":"Jammu and Kashmir Bank","cats":["hold"],"txns":1,"total":3000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"2440000100109391","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":2147.3,"risk":7,"level":"low","freeze":"LOW"},{"acct":"925010029056854","bank":"Axis Bank","cats":["hold"],"txns":1,"total":3000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"20100075886391","bank":"Bandhan Bank","cats":["hold"],"txns":1,"total":1098.96,"risk":7,"level":"low","freeze":"LOW"},{"acct":"50190007585273","bank":"Bandhan Bank","cats":["hold"],"txns":1,"total":2904.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"348601000008309","bank":"Indian Overseas Bank","cats":["hold"],"txns":1,"total":1267.79,"risk":7,"level":"low","freeze":"LOW"},{"acct":"62097724882","bank":"State Bank of India","cats":["hold"],"txns":1,"total":1362.39,"risk":7,"level":"low","freeze":"LOW"},{"acct":"13230210001455","bank":"UCO Bank","cats":["hold"],"txns":1,"total":5523.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"134040100012207","bank":"Jammu and Kashmir Bank","cats":["hold"],"txns":1,"total":1603.19,"risk":7,"level":"low","freeze":"LOW"},{"acct":"9451079092","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":2000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"449610110015459","bank":"Bank of India","cats":["hold"],"txns":1,"total":2000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"31166325770","bank":"State Bank of India","cats":["hold"],"txns":1,"total":2877.98,"risk":7,"level":"low","freeze":"LOW"},{"acct":"32323601102","bank":"State Bank of India","cats":["hold"],"txns":1,"total":1122.02,"risk":7,"level":"low","freeze":"LOW"},{"acct":"33676778396","bank":"State Bank of India","cats":["hold"],"txns":1,"total":1504.19,"risk":7,"level":"low","freeze":"LOW"},{"acct":"50100401812392","bank":"HDFC Bank","cats":["hold"],"txns":1,"total":3780.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"4058000100044655","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":4474.61,"risk":7,"level":"low","freeze":"LOW"},{"acct":"20275612640","bank":"Fino Payments Bank","cats":["cust"],"txns":1,"total":4500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"79044308892","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","cats":["other"],"txns":1,"total":1086.4,"risk":7,"level":"low","freeze":"LOW"},{"acct":"10001291013360","bank":"Amazon Pay","cats":["other"],"txns":1,"total":3354.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"1055255368","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","cats":["other"],"txns":1,"total":10000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"163312301208996","bank":"KERALA STATE CO-OPERATIVE BANK","cats":["other"],"txns":1,"total":1500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"BD016001BAKAAAE1AX2W","bank":"ESAF Small Finance Bank","cats":["other"],"txns":1,"total":1500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"10000590180113","bank":"Suryoday Bank","cats":["other"],"txns":1,"total":8000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"85020192042040","bank":"Uttar Pradesh Gramin Bank","cats":["other"],"txns":1,"total":3000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"102112250355","bank":"Shivalik Small Finance Bank.(Shivalik Mercantile Cooperative Bank)","cats":["other"],"txns":1,"total":5000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"14260100024896","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":1,"total":5000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"1425000000051","bank":"Paytm Payment Bank","cats":["other"],"txns":1,"total":1500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"XXXXXXXXXXXX5108","bank":"State Bank of India (Credit card)","cats":["other"],"txns":1,"total":1540.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"7013435700","bank":"Chhattisgarh Gramin Bank(CGB)","cats":["other"],"txns":1,"total":1011.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"73355364925","bank":"Flipkart","cats":["other"],"txns":1,"total":3945.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"79088449866","bank":"Telangana Grameena Bank (including DECCAN GRAMIN BANK)","cats":["other"],"txns":1,"total":3000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"3218000283","bank":"AIRPAY","cats":["other"],"txns":1,"total":8500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"60262304264","bank":"Bank of Maharashtra","cats":["other"],"txns":1,"total":4000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"XXXXXXXXXXXX7038","bank":"Ratnakar Bank Limited (RBL)","cats":["other"],"txns":1,"total":5600.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"133710801200079","bank":"KERALA STATE CO-OPERATIVE BANK","cats":["other"],"txns":1,"total":1229.16,"risk":7,"level":"low","freeze":"LOW"},{"acct":"WAL12345678","bank":"Amount frozen","cats":["monthly"],"txns":1,"total":5000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"PG87654321","bank":"Reversed","cats":["monthly"],"txns":1,"total":7500.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"WAL99887766","bank":"Refunded","cats":["monthly"],"txns":1,"total":2000.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"PG55667788","bank":"Pending","cats":["monthly"],"txns":1,"total":9800.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"PA44332211","bank":"Amount held","cats":["monthly"],"txns":1,"total":4300.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"PG33445566","bank":"Refunded","cats":["monthly"],"txns":1,"total":2700.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"PA77889900","bank":"Investigation ongoing","cats":["monthly"],"txns":1,"total":8900.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"WAL11224455","bank":"Amount reversed","cats":["monthly"],"txns":1,"total":6100.0,"risk":7,"level":"low","freeze":"LOW"},{"acct":"8948252529","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":808.07,"risk":3,"level":"low","freeze":"LOW"},{"acct":"84652200024417","bank":"Canara Bank (including Syndicate Bank)","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"50100488844851","bank":"HDFC Bank","cats":["hold"],"txns":1,"total":28.88,"risk":3,"level":"low","freeze":"LOW"},{"acct":"114322120000051","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["hold"],"txns":1,"total":12.15,"risk":3,"level":"low","freeze":"LOW"},{"acct":"503802010500382","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["hold"],"txns":1,"total":970.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1100050322835","bank":"Tamilnad Mercantile Bank Ltd.","cats":["hold"],"txns":1,"total":19.57,"risk":3,"level":"low","freeze":"LOW"},{"acct":"745201700132129","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":2.54,"risk":3,"level":"low","freeze":"LOW"},{"acct":"39679760041","bank":"State Bank of India","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"32520342344","bank":"State Bank of India","cats":["hold"],"txns":1,"total":15.85,"risk":3,"level":"low","freeze":"LOW"},{"acct":"3248621501","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":196.3,"risk":3,"level":"low","freeze":"LOW"},{"acct":"2746680461","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":197.18,"risk":3,"level":"low","freeze":"LOW"},{"acct":"4145877213","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":709.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"32167103714","bank":"State Bank of India","cats":["hold"],"txns":1,"total":2.29,"risk":3,"level":"low","freeze":"LOW"},{"acct":"61332310001922","bank":"Canara Bank (including Syndicate Bank)","cats":["hold"],"txns":1,"total":504.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"110092327809","bank":"Canara Bank (including Syndicate Bank)","cats":["hold"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"3261372572","bank":"Central Bank of India","cats":["hold"],"txns":1,"total":2.45,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8020825838","bank":"Indian Bank (including Allahabad Bank)","cats":["hold"],"txns":1,"total":33.85,"risk":3,"level":"low","freeze":"LOW"},{"acct":"7961816639","bank":"Indian Bank (including Allahabad Bank)","cats":["hold"],"txns":1,"total":550.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"332201000005586","bank":"Indian Overseas Bank","cats":["hold"],"txns":1,"total":4.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"7671000400009262","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"6880000100070309","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":443.98,"risk":3,"level":"low","freeze":"LOW"},{"acct":"4871000100124169","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":568.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"4.798E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":804.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"62426977888","bank":"State Bank of India","cats":["hold"],"txns":1,"total":970.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"62397572225","bank":"State Bank of India","cats":["hold"],"txns":1,"total":964.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"35642651523","bank":"State Bank of India","cats":["hold"],"txns":1,"total":509.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"35618103235","bank":"State Bank of India","cats":["hold"],"txns":1,"total":73.91,"risk":3,"level":"low","freeze":"LOW"},{"acct":"20253399856","bank":"State Bank of India","cats":["hold"],"txns":1,"total":4.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"43200897592","bank":"State Bank of India","cats":["hold"],"txns":1,"total":30.19,"risk":3,"level":"low","freeze":"LOW"},{"acct":"40857815433","bank":"State Bank of India","cats":["hold"],"txns":1,"total":77.49,"risk":3,"level":"low","freeze":"LOW"},{"acct":"32778751115","bank":"State Bank of India","cats":["hold"],"txns":1,"total":19.68,"risk":3,"level":"low","freeze":"LOW"},{"acct":"37654795512","bank":"State Bank of India","cats":["hold"],"txns":1,"total":37.89,"risk":3,"level":"low","freeze":"LOW"},{"acct":"33665130575","bank":"State Bank of India","cats":["hold"],"txns":1,"total":1.22,"risk":3,"level":"low","freeze":"LOW"},{"acct":"41188995993","bank":"State Bank of India","cats":["hold"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"20247792392","bank":"State Bank of India","cats":["hold"],"txns":1,"total":175.41,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9851450287","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":2.79,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8059306331","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":304.49,"risk":3,"level":"low","freeze":"LOW"},{"acct":"7505827550","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":28.68,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9358178760","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":60.54,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9084156929","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":7.86,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9216197394","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":6.05,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9933146129","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":718.51,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9674884114","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":244.64,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9726093932","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":21.65,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9244039113","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":110.96,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9799386544","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":4.38,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9079932647","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":1.42,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8799533813","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":5.02,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8967266881","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":506.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8433178551","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":2.11,"risk":3,"level":"low","freeze":"LOW"},{"acct":"7068397220","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":5.75,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9703834614","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":406.11,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9305318048","bank":"Airtel Payments Bank","cats":["hold"],"txns":1,"total":20.35,"risk":3,"level":"low","freeze":"LOW"},{"acct":"12433211098041","bank":"UCO Bank","cats":["hold"],"txns":1,"total":2.5,"risk":3,"level":"low","freeze":"LOW"},{"acct":"8400100014111","bank":"UCO Bank","cats":["hold"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"303222010001303","bank":"Union Bank of India( including Andhra Bank and Corporation Bank)","cats":["hold"],"txns":1,"total":651.55,"risk":3,"level":"low","freeze":"LOW"},{"acct":"10195638456","bank":"IDFC First Bank","cats":["hold"],"txns":1,"total":237.62,"risk":3,"level":"low","freeze":"LOW"},{"acct":"50100551816725","bank":"HDFC Bank","cats":["hold"],"txns":1,"total":115.06,"risk":3,"level":"low","freeze":"LOW"},{"acct":"6449631393","bank":"Kotak Mahindra Bank","cats":["hold"],"txns":1,"total":728.99,"risk":3,"level":"low","freeze":"LOW"},{"acct":"794610110000068","bank":"Bank of India","cats":["hold"],"txns":1,"total":5.46,"risk":3,"level":"low","freeze":"LOW"},{"acct":"42267383258","bank":"State Bank of India","cats":["hold"],"txns":1,"total":504.31,"risk":3,"level":"low","freeze":"LOW"},{"acct":"50448727036","bank":"Indian Bank (including Allahabad Bank)","cats":["hold"],"txns":1,"total":958.25,"risk":3,"level":"low","freeze":"LOW"},{"acct":"79302000000866","bank":"Indian Overseas Bank","cats":["hold"],"txns":1,"total":999.89,"risk":3,"level":"low","freeze":"LOW"},{"acct":"3218000302","bank":"Fino Payments Bank","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"110285142853","bank":"Canara Bank (including Syndicate Bank)","cats":["hold"],"txns":1,"total":587.09,"risk":3,"level":"low","freeze":"LOW"},{"acct":"3.165E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1182201700094535","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":11.02,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1124001500148847","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":961.89,"risk":3,"level":"low","freeze":"LOW"},{"acct":"9.329E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["hold"],"txns":1,"total":862.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"996810110004756","bank":"Bank of India","cats":["hold"],"txns":1,"total":513.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"432718210003098","bank":"Bank of India","cats":["hold"],"txns":1,"total":11.93,"risk":3,"level":"low","freeze":"LOW"},{"acct":"625020110000194","bank":"Bank of India","cats":["hold"],"txns":1,"total":109.34,"risk":3,"level":"low","freeze":"LOW"},{"acct":"41103491768","bank":"State Bank of India","cats":["hold"],"txns":1,"total":408.79,"risk":3,"level":"low","freeze":"LOW"},{"acct":"61301297086","bank":"State Bank of India","cats":["hold"],"txns":1,"total":7.98,"risk":3,"level":"low","freeze":"LOW"},{"acct":"165101519528","bank":"ICICI Bank","cats":["hold"],"txns":1,"total":49.12,"risk":3,"level":"low","freeze":"LOW"},{"acct":"50100799085069","bank":"HDFC Bank","cats":["hold"],"txns":1,"total":500.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"42902132850","bank":"State Bank of India","cats":["hold"],"txns":1,"total":0.14,"risk":3,"level":"low","freeze":"LOW"},{"acct":"18680100018517","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"924020063866790","bank":"Axis Bank","cats":["other"],"txns":1,"total":1.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1.242E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["other"],"txns":1,"total":798.84,"risk":3,"level":"low","freeze":"LOW"},{"acct":"76019628486","bank":"Uttarakhand Gramin Bank (including Uttaranchal Gramin Bank)","cats":["other"],"txns":1,"total":110.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"50200027864076","bank":"LIFE INSURANCE CORPORATION","cats":["other"],"txns":1,"total":0.01,"risk":3,"level":"low","freeze":"LOW"},{"acct":"XXXXXXXXXXXX7528","bank":"Axis Bank","cats":["other"],"txns":1,"total":884.94,"risk":3,"level":"low","freeze":"LOW"},{"acct":"26808100013764","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":1,"total":600.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1677900000042","bank":"Yes Bank","cats":["other"],"txns":1,"total":0.42,"risk":3,"level":"low","freeze":"LOW"},{"acct":"110111689814","bank":"Canara Bank (including Syndicate Bank)","cats":["other"],"txns":1,"total":435.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"168812301205865","bank":"KERALA STATE CO-OPERATIVE BANK","cats":["other"],"txns":1,"total":529.12,"risk":3,"level":"low","freeze":"LOW"},{"acct":"421711859967","bank":"Jio Payments Bank Ltd","cats":["other"],"txns":1,"total":700.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"80310001015226","bank":"Deogiri Nagari Sahakari Bank Ltd. Aurangabad.","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"49818100010217","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":1,"total":700.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"2541109900110151","bank":"Amazon Pay","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"435000100546493","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["other"],"txns":1,"total":30.52,"risk":3,"level":"low","freeze":"LOW"},{"acct":"87005137900","bank":"Meghalaya Rural Bank","cats":["other"],"txns":1,"total":525.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"3773630362","bank":"Central Bank of India","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"2071121000093","bank":"AIRPAY","cats":["other"],"txns":1,"total":100.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"2071121000066","bank":"Jio Payment Solutions Limited","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"67640100012108","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["other"],"txns":1,"total":543.93,"risk":3,"level":"low","freeze":"LOW"},{"acct":"819201000493","bank":"Canara Bank (including Syndicate Bank)","cats":["other"],"txns":1,"total":560.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"20202260010111","bank":"Bank of India","cats":["other"],"txns":1,"total":600.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"6410910000417","bank":"Kotak Mahindra Bank","cats":["other"],"txns":1,"total":1000.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"80800402821690","bank":"Sarva Haryana Gramin Bank (including Haryana Gramin Bank)","cats":["other"],"txns":1,"total":594.0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"925010015524796","bank":"Axis Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"925020014967397","bank":"Axis Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"902055001003881","bank":"ICICI Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"39305007322","bank":"ICICI Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"100187550678","bank":"IndusInd Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"41347047586","bank":"State Bank of India","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"4290110146736","bank":"UCO Bank","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"1.637E+15","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"6009001500027604","bank":"Punjab National Bank (including Oriental Bank of Commerce and United Bank of India)","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"},{"acct":"12640100020163","bank":"Bank of Baroda (Including Vijaya Bank and Dena Bank)","cats":["others500"],"txns":1,"total":0,"risk":3,"level":"low","freeze":"LOW"}];
+
+
+const CAT_LABEL={hold:'On Hold',aeps:'AEPS',atm:'ATM',pos:'POS',cheque:'Cheque',cust:'Customer Svc',other:'Other',others500:'Others <500',monthly:'Monthly',rejected:'Rejected/ICCL'};
+const CAT_COLOR={hold:'#f59e0b',aeps:'#8b5cf6',atm:'#14b8a6',pos:'#f97316',cheque:'#ef4444',cust:'#ec4899',other:'#3b82f6',others500:'#fbbf24',monthly:'#10b981',rejected:'#64748b'};
+const CAT_TAG={hold:'t-hold',aeps:'t-aeps',atm:'t-atm',pos:'t-pos',cheque:'t-cheque',cust:'t-cust',other:'t-other',others500:'t-500',monthly:'t-monthly',rejected:'t-rej'};
+
+function fmt(n){if(!n)return'₹0';if(n>=10000000)return'₹'+(n/10000000).toFixed(2)+'Cr';if(n>=100000)return'₹'+(n/100000).toFixed(1)+'L';if(n>=1000)return'₹'+(n/1000).toFixed(1)+'K';return'₹'+Math.round(n).toLocaleString('en-IN')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function dch(id){const el=document.getElementById(id);if(el){const c=Chart.getChart(el);if(c)c.destroy()}}
+function sp(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+name).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(name==='graph')setTimeout(drawG,80);
+  if(name==='acct')renderA(ACCTS);
+  if(name==='freeze')renderF();
+  if(name==='rec')renderRec();
+  if(name==='trail')renderT(ROWS);
+  if(name==='alerts')renderAlertCharts();
+}
+
+// ── OVERVIEW CHARTS ──
+window.addEventListener('load',()=>{
+  // Cat count
+  const catCnt={};ROWS.forEach(r=>{catCnt[r.cat]=(catCnt[r.cat]||0)+1});
+  const cKeys=Object.keys(catCnt);
+  new Chart(document.getElementById('catCntChart'),{
+    type:'bar',
+    data:{labels:cKeys.map(k=>CAT_LABEL[k]||k),datasets:[{data:cKeys.map(k=>catCnt[k]),backgroundColor:cKeys.map(k=>CAT_COLOR[k]),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+  // Cat amount
+  const catAmt={};ROWS.forEach(r=>{catAmt[r.cat]=(catAmt[r.cat]||0)+r.amt});
+  const aKeys=Object.keys(catAmt).filter(k=>catAmt[k]>0);
+  new Chart(document.getElementById('catAmtChart'),{
+    type:'bar',
+    data:{labels:aKeys.map(k=>CAT_LABEL[k]||k),datasets:[{data:aKeys.map(k=>catAmt[k]),backgroundColor:aKeys.map(k=>CAT_COLOR[k]),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+  // Update account risk counts
+  const lvl={critical:0,high:0,medium:0,low:0};
+  ACCTS.forEach(a=>lvl[a.level]=(lvl[a.level]||0)+1);
+  document.getElementById('ac-c').textContent=lvl.critical||0;
+  document.getElementById('ac-h').textContent=lvl.high||0;
+  document.getElementById('ac-m').textContent=lvl.medium||0;
+  document.getElementById('ac-l').textContent=lvl.low||0;
+});
+
+// ── GRAPH ──
+let gOff={x:0,y:0},gScale=1,gDrag=false,gDS={x:0,y:0},gHR=false;
+let gNodes=[],gEdges=[];
+
+function buildG(){
+  const fCat=document.getElementById('gf').value;
+  const fRisk=document.getElementById('grl').value;
+  gNodes=[];gEdges=[];
+  const total=ROWS.reduce((s,r)=>s+r.amt,0);
+  gNodes.push({id:'ROOT',label:'FRAUD\nROOT\n₹'+fmt(total).replace('₹',''),x:520,y:55,color:'#ef4444',radius:34,risk:100,cat:'root',bank:'',txns:ROWS.length,total});
+  
+  let shownAccts=ACCTS.filter(a=>{
+    if(fCat!=='all'&&!a.cats.includes(fCat))return false;
+    if(fRisk==='critical'&&a.level!=='critical')return false;
+    if(fRisk==='high'&&a.level!=='critical'&&a.level!=='high')return false;
+    if(fRisk==='medium'&&a.level==='low')return false;
+    if(gHR&&a.risk<60)return false;
+    return true;
+  }).slice(0,40);
+  
+  const cols=8;
+  shownAccts.forEach((a,i)=>{
+    const col=i%cols, row=Math.floor(i/cols);
+    const x=60+col*120, y=200+row*155;
+    const primCat=a.cats[0]||'other';
+    const color=CAT_COLOR[primCat]||'#3b82f6';
+    const r=Math.min(26,10+Math.sqrt(a.txns)*4);
+    gNodes.push({id:a.acct,label:a.acct.slice(-10)+'\n'+fmt(a.total),x,y,color,radius:r,risk:a.risk,cat:primCat,bank:a.bank,txns:a.txns,total:a.total});
+    gEdges.push({from:'ROOT',to:a.acct,label:fmt(a.total),dashed:a.risk<70});
+  });
+}
+
+function drawG(){
+  buildG();
+  const cv=document.getElementById('gCv');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  cv.width=cv.offsetWidth||900;cv.height=540;
+  ctx.save();ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.translate(gOff.x,gOff.y);ctx.scale(gScale,gScale);
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.025)';ctx.lineWidth=1;
+  for(let x=0;x<cv.width*3;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height*3);ctx.stroke()}
+  for(let y=0;y<cv.height*3;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width*3,y);ctx.stroke()}
+  // Edges
+  gEdges.forEach(e=>{
+    const fr=gNodes.find(n=>n.id===e.from),to=gNodes.find(n=>n.id===e.to);
+    if(!fr||!to)return;
+    const dx=to.x-fr.x,dy=to.y-fr.y,len=Math.sqrt(dx*dx+dy*dy);
+    if(!len)return;
+    const ux=dx/len,uy=dy/len;
+    const ex=to.x-ux*to.radius,ey=to.y-uy*to.radius;
+    ctx.beginPath();ctx.setLineDash(e.dashed?[5,4]:[]);
+    ctx.moveTo(fr.x,fr.y);ctx.lineTo(ex,ey);
+    ctx.strokeStyle=e.dashed?'rgba(100,116,139,.3)':'rgba(148,163,184,.45)';
+    ctx.lineWidth=e.dashed?1:1.5;ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-ux*7+uy*3.5,ey-uy*7-ux*3.5);ctx.lineTo(ex-ux*7-uy*3.5,ey-uy*7+ux*3.5);
+    ctx.closePath();ctx.fillStyle='rgba(148,163,184,.55)';ctx.fill();
+    if(e.label&&len>80){
+      const mx=(fr.x+to.x)/2,my=(fr.y+to.y)/2;
+      ctx.fillStyle='rgba(15,24,41,.85)';ctx.fillRect(mx-18,my-8,36,13);
+      ctx.fillStyle='#94a3b8';ctx.font='8px system-ui';ctx.textAlign='center';
+      ctx.fillText(e.label,mx,my+3);
+    }
+  });
+  // Nodes
+  gNodes.forEach(n=>{
+    if(n.risk>=80){ctx.beginPath();ctx.arc(n.x,n.y,n.radius+8,0,Math.PI*2);ctx.fillStyle='rgba(239,68,68,.14)';ctx.fill()}
+    ctx.beginPath();ctx.arc(n.x,n.y,n.radius,0,Math.PI*2);
+    ctx.fillStyle=n.color+'28';ctx.fill();
+    ctx.strokeStyle=n.color;ctx.lineWidth=n.risk>=80?2.5:1.5;ctx.setLineDash([]);ctx.stroke();
+    const lines=n.label.split('\n');
+    ctx.font=(n.id==='ROOT'?'11':'9')+'px system-ui';ctx.fillStyle='#e2e8f0';ctx.textAlign='center';
+    lines.forEach((l,i)=>ctx.fillText(l,n.x,n.y+n.radius+12+i*11));
+  });
+  ctx.restore();
+}
+
+function gReset(){gOff={x:0,y:0};gScale=1;gHR=false;drawG()}
+function gHRF(){gHR=true;drawG()}
+document.getElementById('gf').addEventListener('change',drawG);
+document.getElementById('grl').addEventListener('change',drawG);
+(function(){
+  window.addEventListener('load',()=>{
+    const cv=document.getElementById('gCv');
+    cv.addEventListener('mousedown',e=>{gDrag=true;gDS={x:e.clientX-gOff.x,y:e.clientY-gOff.y}});
+    cv.addEventListener('mousemove',e=>{
+      if(gDrag){gOff={x:e.clientX-gDS.x,y:e.clientY-gDS.y};drawG()}
+      else gTT(e,cv);
+    });
+    cv.addEventListener('mouseup',()=>gDrag=false);
+    cv.addEventListener('mouseleave',()=>{gDrag=false;document.getElementById('tooltip').style.display='none'});
+    cv.addEventListener('wheel',e=>{e.preventDefault();gScale=Math.max(.3,Math.min(3,gScale*(e.deltaY>0?.9:1.1)));drawG()});
+    cv.addEventListener('click',e=>gClick(e,cv));
+  });
+})();
+
+function gNA(e,cv){const r=cv.getBoundingClientRect();const mx=(e.clientX-r.left-gOff.x)/gScale,my=(e.clientY-r.top-gOff.y)/gScale;return gNodes.find(n=>Math.hypot(n.x-mx,n.y-my)<n.radius+10)}
+function gTT(e,cv){
+  const n=gNA(e,cv),tt=document.getElementById('tooltip');
+  if(n){
+    tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-8)+'px';
+    const rc=n.risk>=80?'#fca5a5':n.risk>=60?'#fcd34d':n.risk>=40?'#93c5fd':'#6ee7b7';
+    tt.innerHTML=`<strong>${n.id}</strong><br>Bank: ${n.bank||'—'}<br>Category: ${CAT_LABEL[n.cat]||n.cat}<br>Transactions: ${n.txns}<br>Amount: ${fmt(n.total)}<br>Risk: <span style="color:${rc}">${n.risk}/100</span>`;
+  }else tt.style.display='none';
+}
+function gClick(e,cv){
+  const n=gNA(e,cv);if(!n||n.id==='ROOT')return;
+  const rc=n.risk>=80?'#fca5a5':n.risk>=60?'#fcd34d':'#93c5fd';
+  document.getElementById('mTitle').textContent='Account: '+n.id;
+  document.getElementById('mBody').innerHTML=`
+    <div class="sr"><span class="sl">Account No.</span><span class="sv" style="font-family:monospace">${n.id}</span></div>
+    <div class="sr"><span class="sl">Bank</span><span class="sv">${n.bank||'—'}</span></div>
+    <div class="sr"><span class="sl">Category</span><span class="sv">${CAT_LABEL[n.cat]||n.cat}</span></div>
+    <div class="sr"><span class="sl">Transactions</span><span class="sv">${n.txns}</span></div>
+    <div class="sr"><span class="sl">Total Amount</span><span class="sv">${fmt(n.total)}</span></div>
+    <div class="sr"><span class="sl">Risk Score</span><span class="sv" style="color:${rc}">${n.risk}/100</span></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-r" onclick="mFr('${n.id.replace(/'/g,"\'")}');cm()">Mark Freeze</button>
+      <button class="btn" onclick="cm()">Close</button>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+function cm(){document.getElementById('modal').classList.remove('open')}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)cm()});
+const gHRBtn=document.querySelector('[onclick="gHRF()"]');
+// fix onclick
+document.querySelector('.btn-r[onclick="gHR()"]')&&(document.querySelector('.btn-r[onclick="gHR()"]').onclick=gHRF);
+
+// ── ACCOUNTS ──
+function renderA(data){
+  const rc={critical:'var(--rl)',high:'var(--al)',medium:'var(--bl)',low:'var(--gl)'};
+  const rf={critical:'rf-c',high:'rf-h',medium:'rf-m',low:'rf-l'};
+  document.getElementById('aTbody').innerHTML=data.slice(0,200).map(a=>`
+    <tr>
+      <td style="font-family:monospace;font-size:11px">${esc(a.acct)}</td>
+      <td style="font-size:11px">${esc(a.bank.slice(0,28))}</td>
+      <td>${a.cats.map(c=>`<span class="tag ${CAT_TAG[c]||'t-other'}">${CAT_LABEL[c]||c}</span>`).join('')}</td>
+      <td>${a.txns}</td>
+      <td>${fmt(a.total)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="font-weight:600;color:${rc[a.level]}">${a.risk}</span>
+          <div class="rbar" style="width:70px"><div class="rf ${rf[a.level]||'rf-l'}" style="width:${a.risk}%"></div></div>
+        </div>
+      </td>
+      <td><span class="badge ${a.level==='critical'?'badge-red':a.level==='high'?'badge-amb':'badge-blue'}">${a.level.toUpperCase()}</span></td>
+      <td><span class="fp fp-${(a.freeze||'low').toLowerCase()}">${a.freeze||'LOW'}</span></td>
+    </tr>`).join('');
+}
+function filterA(){
+  const q=document.getElementById('aSearch').value.toLowerCase();
+  const f=document.getElementById('aRf').value;
+  renderA(ACCTS.filter(a=>(!q||a.acct.toLowerCase().includes(q)||a.bank.toLowerCase().includes(q))&&(f==='all'||a.level===f)));
+}
+function exportA(){
+  const rows=[['Account','Bank','Categories','Txns','TotalAmount','RiskScore','Level','Freeze']];
+  ACCTS.forEach(a=>rows.push([a.acct,a.bank,a.cats.join('|'),a.txns,a.total,a.risk,a.level,a.freeze||'LOW']));
+  dlCSV(rows,'account_risk.csv');
+}
+
+// ── ALERTS CHARTS ──
+function renderAlertCharts(){
+  const catCnt={};ROWS.forEach(r=>{catCnt[r.cat]=(catCnt[r.cat]||0)+1});
+  const catAmt={};ROWS.forEach(r=>{catAmt[r.cat]=(catAmt[r.cat]||0)+r.amt});
+  const ks=Object.keys(catCnt);
+  dch('patChart');
+  new Chart(document.getElementById('patChart'),{type:'bar',data:{labels:ks.map(k=>CAT_LABEL[k]),datasets:[{data:ks.map(k=>catCnt[k]),backgroundColor:ks.map(k=>CAT_COLOR[k]),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}}}});
+  const aks=ks.filter(k=>catAmt[k]>0);
+  dch('amtChart2');
+  new Chart(document.getElementById('amtChart2'),{type:'bar',data:{labels:aks.map(k=>CAT_LABEL[k]),datasets:[{data:aks.map(k=>catAmt[k]),backgroundColor:aks.map(k=>CAT_COLOR[k]),borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,.05)'}}}}});
+}
+
+// ── FREEZE ──
+const frozenSet=new Set();
+function renderF(){
+  const highRisk=ACCTS.filter(a=>a.risk>=40).sort((a,b)=>b.risk-a.risk);
+  const total=highRisk.reduce((s,a)=>s+a.total,0);
+  document.getElementById('fr-cnt').textContent=highRisk.length;
+  document.getElementById('fr-amt').textContent=fmt(total);
+  document.getElementById('fr-dn').textContent=frozenSet.size;
+  document.getElementById('fr-pd').textContent=highRisk.length-frozenSet.size;
+  document.getElementById('fList').innerHTML=highRisk.slice(0,30).map(a=>`
+    <div class="fc">
+      <div class="fh">
+        <span style="font-weight:600;font-family:monospace;font-size:12px">${esc(a.acct)}</span>
+        <span class="fp fp-${(a.freeze||'low').toLowerCase()}">${a.freeze||'LOW'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--tx2);display:flex;gap:14px;flex-wrap:wrap">
+        <span>🏦 ${esc(a.bank.slice(0,30))}</span>
+        <span>💰 ${fmt(a.total)}</span>
+        <span>📋 ${a.txns} txn(s)</span>
+        <span>${a.cats.map(c=>`<span class="tag ${CAT_TAG[c]||'t-other'}">${CAT_LABEL[c]}</span>`).join('')}</span>
+      </div>
+      <div style="margin-top:9px;display:flex;gap:8px">
+        ${frozenSet.has(a.acct)
+          ?'<span class="badge badge-red">✓ MARKED FOR FREEZE</span>'
+          :`<button class="btn btn-r" onclick="mFr('${a.acct.replace(/'/g,"\'")}')">Mark Freeze</button>
+            <button class="btn" onclick="genLetter('${a.acct.replace(/'/g,"\'")}','${a.bank.replace(/'/g,"\'").replace(/"/g,'')}','${fmt(a.total)}')">Generate Letter</button>`}
+      </div>
+    </div>`).join('');
+}
+function mFr(acct){frozenSet.add(acct);renderF()}
+function genLetter(acct,bank,amt){alert(`FREEZE RECOMMENDATION\n\nTo: Nodal Officer, ${bank}\nRe: Account ${acct}\nCase: 20202260010111\nAmount at Risk: ${amt}\n\nPlease freeze above account under PMLA 2002 Sec 17A and CGPDTM guidelines.\n[Full PDF in production implementation]`)}
+
+// ── RECOVERY ──
+function renderRec(){
+  dch('recChart');
+  new Chart(document.getElementById('recChart'),{
+    type:'doughnut',
+    data:{labels:['On Hold (recoverable)','Withdrawn (ATM+AEPS+Cheque+POS+Cust)','Investigating (Other+Monthly)'],datasets:[{data:[65412,2543765,3824981],backgroundColor:['#10b981','#ef4444','#f59e0b'],borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#94a3b8',font:{size:10},boxWidth:10}}},cutout:'58%'}
+  });
+  // Banks chart
+  dch('bankChart');
+  new Chart(document.getElementById('bankChart'),{
+    type:'bar',
+    data:{labels:['Kotak Mah.','J&K Bank','IDBI','Canara','HDFC','Axis','IndusInd','DCB','SBI','AU Bank','Other(54+)'],
+      datasets:[{label:'Hold Amount',data:[808,3000,200,500,3609,2000,1500,15000,800,2000,36000],backgroundColor:'#10b981',borderRadius:3},{label:'Txn Count',data:[1,1,3,2,5,10,4,2,3,1,68],backgroundColor:'#3b82f6',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#94a3b8',font:{size:10}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+}
+
+// ── TRAIL ──
+function renderT(rows){
+  document.getElementById('tTbody').innerHTML=rows.slice(0,300).map((r,i)=>`
+    <tr>
+      <td style="color:var(--tx3)">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px">${esc(r.acct)}</td>
+      <td style="font-family:monospace;font-size:11px">${esc(r.txn||'—')}</td>
+      <td style="font-size:11px;white-space:nowrap">${esc(r.date||'—')}</td>
+      <td>${r.amt>0?fmt(r.amt):'—'}</td>
+      <td><span class="tag ${CAT_TAG[r.cat]||'t-other'}">${CAT_LABEL[r.cat]||r.cat}</span></td>
+      <td style="font-size:11px">${esc(r.bank.slice(0,30))}</td>
+      <td style="font-size:10px;color:var(--tx3)">${esc(r.remarks||'')}</td>
+    </tr>`).join('');
+  document.getElementById('tCount').textContent=`Showing ${Math.min(rows.length,300)} of ${rows.length} records`;
+}
+function filterT(){
+  const q=document.getElementById('tSearch').value.toLowerCase();
+  const cat=document.getElementById('tCat').value;
+  renderT(ROWS.filter(r=>(!q||r.acct.toLowerCase().includes(q)||r.txn.toLowerCase().includes(q)||r.bank.toLowerCase().includes(q)||r.remarks.toLowerCase().includes(q))&&(cat==='all'||r.cat===cat)));
+}
+function exportT(){
+  const rows=[['Account','TxnID','Date','Amount','Category','Bank','Remarks']];
+  ROWS.forEach(r=>rows.push([r.acct,r.txn,r.date,r.amt,CAT_LABEL[r.cat]||r.cat,r.bank,r.remarks]));
+  dlCSV(rows,'fraud_trail_full.csv');
+}
+
+function dlCSV(rows,name){
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=name;a.click();
+}
+
+// Time
+setInterval(()=>{document.getElementById('tDisp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
+document.getElementById('tDisp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+
+// ══════════════════════════════════════════════
+//  UPLOAD ENGINE
+// ══════════════════════════════════════════════
+const UP_KEYWORDS = {
+  hold:      ['put_on_hold','transaction_put_on_hold','_hold_'],
+  atm:       ['with_drawl_through_atm','withdrawal_through_atm','_atm_'],
+  aeps:      ['_aeps_','aeps'],
+  cheque:    ['cash_with_drawl_through_cheque','cheque','_chq_'],
+  pos:       ['with_drawl_through_pos','_pos_'],
+  cust:      ['customer_service','with_drawl_through_customer','_cust_'],
+  others500: ['others_less','less_then_500','less_than_500','others500','others_less_then'],
+  rejected:  ['funds_not_recieved','funds_not_received','rejected','_iccl_'],
+  monthly:   ['monthly_transfer','monthly'],
+  other:     ['_other_'],
+};
+
+function upDetectCat(fname) {
+  const n = fname.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g,'_');
+  for (const [cat, kws] of Object.entries(UP_KEYWORDS)) {
+    if (kws.some(k => n.includes(k))) return cat;
+  }
+  return 'other';
+}
+
+let upFiles = [];
+
+function upDrop(e) {
+  e.preventDefault();
+  document.getElementById('upZone').classList.remove('drag');
+  upAdd(e.dataTransfer.files);
+}
+
+function upAdd(fileList) {
+  for (const f of fileList) {
+    if (!f.name.toLowerCase().endsWith('.csv')) continue;
+    if (upFiles.find(u => u.file.name === f.name)) continue; // no duplicates
+    upFiles.push({ file: f, cat: upDetectCat(f.name) });
+  }
+  upRender();
+}
+
+function upRemove(i) {
+  upFiles.splice(i, 1);
+  upRender();
+}
+
+function upRender() {
+  const list = document.getElementById('upList');
+  const cats = ['hold','atm','aeps','cheque','pos','cust','other','others500','rejected','monthly'];
+  list.innerHTML = upFiles.map((u, i) => `
+    <div class="up-item">
+      <span class="up-item-icon">📄</span>
+      <span class="up-item-name" title="${esc(u.file.name)}">${esc(u.file.name)}</span>
+      <div class="up-item-cat">
+        <select onchange="upFiles[${i}].cat=this.value">
+          ${cats.map(c => `<option value="${c}"${u.cat===c?' selected':''}>${CAT_LABEL[c]||c}</option>`).join('')}
+        </select>
+      </div>
+      <span class="up-item-rm" onclick="upRemove(${i})">×</span>
+    </div>`).join('');
+  const st = document.getElementById('upStatus');
+  const go = document.getElementById('upGo');
+  if (upFiles.length === 0) {
+    st.textContent = 'No files selected'; st.className = 'up-status';
+    go.disabled = true;
+  } else {
+    st.textContent = upFiles.length + ' file(s) ready to load';
+    st.className = 'up-status ok';
+    go.disabled = false;
+  }
+}
+
+function upParseCSV(text) {
+  const raw = text.replace(/\r/g, '');
+  const lines = [];
+  let cur = '', inq = false;
+  const cells = [];
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === '"') { inq = !inq; continue; }
+    if (ch === ',' && !inq) { cells.push(cur); cur = ''; continue; }
+    if (ch === '\n' && !inq) {
+      cells.push(cur); cur = '';
+      lines.push([...cells]); cells.length = 0;
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur || cells.length) { cells.push(cur); lines.push([...cells]); }
+  if (lines.length < 2) return [];
+  const headers = lines[0].map(h => h.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i];
+    if (!vals.some(v => v.trim())) continue;
+    const obj = {};
+    headers.forEach((h, j) => obj[h] = (vals[j] || '').trim());
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function upGetField(obj, ...keys) {
+  for (const k of keys) {
+    const v = obj[k];
+    if (v !== undefined && v !== '' && v !== '0') return v.trim();
+  }
+  return '';
+}
+
+function upParseAmt(s) {
+  if (!s) return 0;
+  const n = parseFloat(String(s).replace(/[,₹\s]/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+function upExtractRow(obj, cat) {
+  const acct = upGetField(obj,
+    'Account No./ (Wallet /PG/PA) Id',
+    'Account No./Wallet/PG/PA Id',
+    'Account No');
+  const txn = upGetField(obj,
+    'Transaction Id / UTR Number',
+    'Transaction Id');
+  const bank = upGetField(obj,
+    'Action Taken By bank',
+    'Action Taken By Bank',
+    'Action Taken By bank ');
+  const remarks = upGetField(obj, 'Remarks', 'Remark') || '';
+  const date = upGetField(obj,
+    'Put on hold Date',
+    'Withdrawal Date & Time', 'Withdrawal Date',
+    'Date', 'Transaction Date',
+    'Date of Action');
+  const amtRaw = upGetField(obj,
+    'Put on hold Amount',
+    'Withdrawal Amount',
+    'Transaction Amount');
+  const amt = (cat === 'others500') ? 0 : upParseAmt(amtRaw);
+  return { acct: acct.trim(), bank, txn, date, amt, cat, remarks };
+}
+
+function upBuildAccts(rows) {
+  const map = {};
+  rows.forEach(r => {
+    if (!r.acct) return;
+    if (!map[r.acct]) map[r.acct] = { acct: r.acct, bank: '', cats: new Set(), txns: 0, total: 0 };
+    const a = map[r.acct];
+    a.txns++;
+    a.total += r.amt;
+    a.cats.add(r.cat);
+    if (!a.bank && r.bank) a.bank = r.bank;
+  });
+  return Object.values(map).map(a => {
+    let s = 0;
+    if (a.cats.size > 1) s += 30;
+    if (a.cats.has('cheque')) s += 25;
+    if (a.cats.has('atm'))    s += 15;
+    if (a.cats.has('aeps'))   s += 12;
+    if (a.cats.has('pos'))    s += 10;
+    if (a.txns >= 5) s += 15; else if (a.txns >= 3) s += 8; else if (a.txns >= 2) s += 4;
+    if (a.total >= 300000) s += 15; else if (a.total >= 100000) s += 10;
+    else if (a.total >= 50000) s += 6; else if (a.total >= 10000) s += 3;
+    s = Math.min(s, 100);
+    const level = s >= 80 ? 'critical' : s >= 60 ? 'high' : s >= 40 ? 'medium' : 'low';
+    return { acct: a.acct, bank: a.bank, cats: [...a.cats].sort(),
+             txns: a.txns, total: Math.round(a.total * 100) / 100,
+             risk: s, level, freeze: level.toUpperCase() };
+  }).sort((a, b) => b.risk - a.risk);
+}
+
+function upRefreshDashboard(ack) {
+  // Update topbar
+  const uniqA = new Set(ROWS.map(r => r.acct)).size;
+  const cats  = new Set(ROWS.map(r => r.cat)).size;
+  document.querySelector('.badge-amb').textContent  = 'ACK: ' + ack;
+  document.querySelector('.badge-blue').textContent = ROWS.length + ' Records · ' + cats + ' Categories';
+
+  // Rebuild overview charts
+  dch('catCntChart'); dch('catAmtChart');
+  const catCnt = {}; ROWS.forEach(r => { catCnt[r.cat] = (catCnt[r.cat]||0)+1; });
+  const cKeys = Object.keys(catCnt);
+  new Chart(document.getElementById('catCntChart'), {
+    type:'bar',
+    data:{labels:cKeys.map(k=>CAT_LABEL[k]||k),datasets:[{data:cKeys.map(k=>catCnt[k]),backgroundColor:cKeys.map(k=>CAT_COLOR[k]),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+  const catAmt = {}; ROWS.forEach(r => { catAmt[r.cat] = (catAmt[r.cat]||0)+r.amt; });
+  const aKeys = Object.keys(catAmt).filter(k => catAmt[k] > 0);
+  new Chart(document.getElementById('catAmtChart'), {
+    type:'bar',
+    data:{labels:aKeys.map(k=>CAT_LABEL[k]||k),datasets:[{data:aKeys.map(k=>catAmt[k]),backgroundColor:aKeys.map(k=>CAT_COLOR[k]),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#94a3b8',font:{size:9},callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,.05)'}}}}
+  });
+
+  // Update overview metric cards
+  const holdAmt  = ROWS.filter(r=>r.cat==='hold').reduce((s,r)=>s+r.amt,0);
+  const wdAmt    = ROWS.filter(r=>['atm','aeps','cheque','pos','cust'].includes(r.cat)).reduce((s,r)=>s+r.amt,0);
+  const totalAmt = ROWS.reduce((s,r)=>s+r.amt,0);
+  const uniqBanks= new Set(ROWS.map(r=>r.bank).filter(Boolean)).size;
+
+  // Find and update metric divs by their card-t text
+  document.querySelectorAll('.card').forEach(card => {
+    const t = card.querySelector('.card-t');
+    const m = card.querySelector('.metric');
+    const s = card.querySelector('.msub');
+    if (!t || !m) return;
+    const label = t.textContent.trim();
+    if (label === 'Total Traced Amount') {
+      m.textContent = fmt(totalAmt);
+      if (s) s.textContent = '₹' + totalAmt.toLocaleString('en-IN', {maximumFractionDigits:0}) + ' across ' + new Set(ROWS.map(r=>r.cat)).size + ' categories';
+    } else if (label === 'Amount on Hold') {
+      m.textContent = fmt(holdAmt);
+      const holdAccts = new Set(ROWS.filter(r=>r.cat==='hold').map(r=>r.acct)).size;
+      const holdBanks = new Set(ROWS.filter(r=>r.cat==='hold').map(r=>r.bank)).size;
+      if (s) s.textContent = holdAccts + ' accounts · ' + holdBanks + ' banks';
+    } else if (label === 'Withdrawn / Lost') {
+      m.textContent = fmt(wdAmt);
+    } else if (label === 'Unique Accounts') {
+      m.textContent = uniqA;
+      if (s) s.textContent = 'Across ' + uniqBanks + ' banks';
+    } else if (label === 'Total Transactions') {
+      m.textContent = ROWS.length;
+      if (s) s.textContent = upFiles.length + ' CSV files loaded';
+    }
+  });
+
+  // Update account risk counts
+  const lvl = {critical:0,high:0,medium:0,low:0};
+  ACCTS.forEach(a => lvl[a.level] = (lvl[a.level]||0)+1);
+  document.getElementById('ac-c').textContent = lvl.critical||0;
+  document.getElementById('ac-h').textContent = lvl.high||0;
+  document.getElementById('ac-m').textContent = lvl.medium||0;
+  document.getElementById('ac-l').textContent = lvl.low||0;
+}
+
+async function upProcess() {
+  const go = document.getElementById('upGo');
+  const st = document.getElementById('upStatus');
+  go.disabled = true;
+  st.textContent = 'Parsing files…'; st.className = 'up-status';
+
+  const ack = document.getElementById('upAck').value.trim() || '20202260010111';
+  const newRows = [];
+  let skipped = 0;
+
+  for (const {file, cat} of upFiles) {
+    try {
+      const text = await file.text();
+      const csvRows = upParseCSV(text);
+      if (cat === 'monthly') { skipped += csvRows.length; continue; }
+      for (const obj of csvRows) {
+        const r = upExtractRow(obj, cat);
+        if (r.acct) newRows.push(r);
+      }
+    } catch(e) {
+      st.textContent = 'Error reading ' + file.name + ': ' + e.message;
+      st.className = 'up-status err';
+      go.disabled = false;
+      return;
+    }
+  }
+
+  if (!newRows.length) {
+    st.textContent = 'No valid rows found. Check that files match the expected format.';
+    st.className = 'up-status err';
+    go.disabled = false;
+    return;
+  }
+
+  // Replace global data
+  ROWS.length = 0; newRows.forEach(r => ROWS.push(r));
+  ACCTS.length = 0; upBuildAccts(newRows).forEach(a => ACCTS.push(a));
+
+  const msg = '✅ Loaded ' + newRows.length + ' records from ' + upFiles.length + ' file(s)' +
+              (skipped ? ' · ' + skipped + ' Monthly rows skipped' : '');
+  st.textContent = msg; st.className = 'up-status ok';
+
+  setTimeout(() => {
+    upHide();
+    upRefreshDashboard(ack);
+    renderF(); renderRec(); renderAlertCharts();
+  }, 600);
+}
+
+function upHide() {
+  document.getElementById('upScreen').style.display = 'none';
+}
+
+// Show upload screen on load (don't auto-hide)
+// upScreen is visible by default via CSS
+
+</script>
+
+<div id="upScreen">
+  <div class="up-box">
+    <div class="up-logo">🔍 Cyber<span>Trace</span></div>
+    <div class="up-sub">Fraud Money Trail Intelligence System — Upload Case CSV Files</div>
+
+    <div class="up-ack-row">
+      <label>Case / ACK No.</label>
+      <input type="text" id="upAck" placeholder="e.g. 20202260010111" value="20202260010111">
+    </div>
+
+    <div class="up-cats-info">
+      <span class="t-hold">On Hold</span>
+      <span class="t-atm">ATM</span>
+      <span class="t-aeps">AEPS</span>
+      <span class="t-cheque">Cheque</span>
+      <span class="t-pos">POS</span>
+      <span class="t-cust">Customer Svc</span>
+      <span class="t-other">Other</span>
+      <span class="t-500">Others&lt;500</span>
+      <span class="t-rej">Rejected/ICCL</span>
+      <span class="t-monthly">Monthly</span>
+    </div>
+
+    <div class="up-zone" id="upZone"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="upDrop(event)"
+      onclick="document.getElementById('upInput').click()">
+      <input type="file" id="upInput" multiple accept=".csv" onchange="upAdd(this.files)">
+      <div class="up-icon">📂</div>
+      <div class="up-ztext">Drag &amp; drop CSV files here or <b>click to browse</b></div>
+      <div class="up-zhint">Select all category CSVs — auto-detected from filename</div>
+    </div>
+
+    <div class="up-list" id="upList"></div>
+
+    <div class="up-footer">
+      <div class="up-status" id="upStatus">No files selected</div>
+      <button class="up-btn-go" id="upGo" onclick="upProcess()" disabled>Load Dashboard →</button>
+    </div>
+
+    <div class="up-sep">or</div>
+    <button class="up-demo-btn" onclick="upHide()">📊 Skip — view demo data already loaded</button>
+  </div>
+</div>
+</body>
+</html>
