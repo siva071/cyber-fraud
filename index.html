@@ -160,6 +160,7 @@ tr:hover td{background:rgba(15,23,42,.04)}
     <div class="card"><div class="card-t">Unique Accounts</div><div class="metric mb">276</div><div class="msub">Across 64 banks</div></div>
     <div class="card"><div class="card-t">Total Transactions</div><div class="metric mp">403</div><div class="msub">9 CSV files loaded</div></div>
   </div>
+  <div class="info" id="summaryHighlights">Investigation highlights: rapid split pattern detected · priority risk clusters are visible in the graph view.</div>
   <div class="g2" style="margin-bottom:16px">
     <div class="card">
       <div class="card-t">Transaction Count by Category</div>
@@ -421,7 +422,7 @@ function buildG(){
   const fRisk=document.getElementById('grl').value;
   gNodes=[];gEdges=[];
   const total=ROWS.reduce((s,r)=>s+r.amt,0);
-  gNodes.push({id:'ROOT',label:'FRAUD\nROOT\n₹'+fmt(total).replace('₹',''),x:520,y:55,color:'#ef4444',radius:34,risk:100,cat:'root',bank:'',txns:ROWS.length,total});
+  gNodes.push({id:'ROOT',label:'FRAUD\nORIGIN\n₹'+fmt(total).replace('₹',''),x:520,y:55,color:'#ef4444',radius:34,risk:100,cat:'root',bank:'',txns:ROWS.length,total,depth:1,freeze:'N/A'});
   
   let shownAccts=ACCTS.filter(a=>{
     if(fCat!=='all'&&!a.cats.includes(fCat))return false;
@@ -439,7 +440,7 @@ function buildG(){
     const primCat=a.cats[0]||'other';
     const color=CAT_COLOR[primCat]||'#3b82f6';
     const r=Math.min(26,10+Math.sqrt(a.txns)*4);
-    gNodes.push({id:a.acct,label:a.acct.slice(-10)+'\n'+fmt(a.total),x,y,color,radius:r,risk:a.risk,cat:primCat,bank:a.bank,txns:a.txns,total:a.total});
+    gNodes.push({id:a.acct,label:a.acct.slice(-10)+'\n'+fmt(a.total),x,y,color,radius:r,risk:a.risk,cat:primCat,bank:a.bank,txns:a.txns,total:a.total,depth:2,freeze:a.level.toUpperCase()});
     gEdges.push({from:'ROOT',to:a.acct,label:fmt(a.total),dashed:a.risk<70});
   });
 }
@@ -452,7 +453,7 @@ function drawG(){
   ctx.save();ctx.clearRect(0,0,cv.width,cv.height);
   ctx.translate(gOff.x,gOff.y);ctx.scale(gScale,gScale);
   // Grid
-  ctx.strokeStyle='rgba(255,255,255,.025)';ctx.lineWidth=1;
+  ctx.strokeStyle='rgba(15,23,42,.08)';ctx.lineWidth=1;
   for(let x=0;x<cv.width*3;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,cv.height*3);ctx.stroke()}
   for(let y=0;y<cv.height*3;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(cv.width*3,y);ctx.stroke()}
   // Edges
@@ -465,16 +466,16 @@ function drawG(){
     const ex=to.x-ux*to.radius,ey=to.y-uy*to.radius;
     ctx.beginPath();ctx.setLineDash(e.dashed?[5,4]:[]);
     ctx.moveTo(fr.x,fr.y);ctx.lineTo(ex,ey);
-    ctx.strokeStyle=e.dashed?'rgba(100,116,139,.3)':'rgba(148,163,184,.45)';
+    ctx.strokeStyle=e.dashed?'rgba(100,116,139,.25)':'rgba(15,23,42,.25)';
     ctx.lineWidth=e.dashed?1:1.5;ctx.stroke();
     ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(ex,ey);
     ctx.lineTo(ex-ux*7+uy*3.5,ey-uy*7-ux*3.5);ctx.lineTo(ex-ux*7-uy*3.5,ey-uy*7+ux*3.5);
-    ctx.closePath();ctx.fillStyle='rgba(148,163,184,.55)';ctx.fill();
+    ctx.closePath();ctx.fillStyle='rgba(15,23,42,.35)';ctx.fill();
     if(e.label&&len>80){
       const mx=(fr.x+to.x)/2,my=(fr.y+to.y)/2;
-      ctx.fillStyle='rgba(15,24,41,.85)';ctx.fillRect(mx-18,my-8,36,13);
-      ctx.fillStyle='#94a3b8';ctx.font='8px system-ui';ctx.textAlign='center';
+      ctx.fillStyle='rgba(255,255,255,.95)';ctx.fillRect(mx-18,my-8,36,13);
+      ctx.fillStyle='#0f172a';ctx.font='8px system-ui';ctx.textAlign='center';
       ctx.fillText(e.label,mx,my+3);
     }
   });
@@ -485,7 +486,7 @@ function drawG(){
     ctx.fillStyle=n.color+'28';ctx.fill();
     ctx.strokeStyle=n.color;ctx.lineWidth=n.risk>=80?2.5:1.5;ctx.setLineDash([]);ctx.stroke();
     const lines=n.label.split('\n');
-    ctx.font=(n.id==='ROOT'?'11':'9')+'px system-ui';ctx.fillStyle='#e2e8f0';ctx.textAlign='center';
+    ctx.font=(n.id==='ROOT'?'11':'9')+'px system-ui';ctx.fillStyle='#0f172a';ctx.textAlign='center';
     lines.forEach((l,i)=>ctx.fillText(l,n.x,n.y+n.radius+12+i*11));
   });
   ctx.restore();
@@ -515,8 +516,8 @@ function gTT(e,cv){
   const n=gNA(e,cv),tt=document.getElementById('tooltip');
   if(n){
     tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-8)+'px';
-    const rc=n.risk>=80?'#fca5a5':n.risk>=60?'#fcd34d':n.risk>=40?'#93c5fd':'#6ee7b7';
-    tt.innerHTML=`<strong>${n.id}</strong><br>Bank: ${n.bank||'—'}<br>Category: ${CAT_LABEL[n.cat]||n.cat}<br>Transactions: ${n.txns}<br>Amount: ${fmt(n.total)}<br>Risk: <span style="color:${rc}">${n.risk}/100</span>`;
+    const rc=n.risk>=80?'#ef4444':n.risk>=60?'#f59e0b':n.risk>=40?'#2563eb':'#16a34a';
+    tt.innerHTML=`<strong>${n.id}</strong><br>Bank: ${n.bank||'—'}<br>Category: ${CAT_LABEL[n.cat]||n.cat}<br>Transactions: ${n.txns}<br>Amount: ${fmt(n.total)}<br>Chain: ${n.depth===1?'Root':'Level '+n.depth}<br>Freeze Priority: ${n.freeze||'—'}<br>Risk: <span style="color:${rc}">${n.risk}/100</span>`;
   }else tt.style.display='none';
 }
 function gClick(e,cv){
@@ -529,6 +530,8 @@ function gClick(e,cv){
     <div class="sr"><span class="sl">Category</span><span class="sv">${CAT_LABEL[n.cat]||n.cat}</span></div>
     <div class="sr"><span class="sl">Transactions</span><span class="sv">${n.txns}</span></div>
     <div class="sr"><span class="sl">Total Amount</span><span class="sv">${fmt(n.total)}</span></div>
+    <div class="sr"><span class="sl">Chain Level</span><span class="sv">${n.depth===1?'Root':'Level '+n.depth}</span></div>
+    <div class="sr"><span class="sl">Freeze Priority</span><span class="sv">${n.freeze||'—'}</span></div>
     <div class="sr"><span class="sl">Risk Score</span><span class="sv" style="color:${rc}">${n.risk}/100</span></div>
     <div style="margin-top:12px;display:flex;gap:8px">
       <button class="btn btn-r" onclick="mFr('${n.id.replace(/'/g,"\'")}');cm()">Mark Freeze</button>
@@ -969,6 +972,16 @@ function upHide() {
   <div class="up-box">
     <div class="up-logo">🔍 Cyber<span>Trace</span></div>
     <div class="up-sub">Upload your case CSV files to populate the fraud investigation dashboard.</div>
+
+    <div class="up-req">
+      <div class="up-req-title">Expected CSV fields</div>
+      <div class="up-req-list">
+        <div class="up-req-item"><strong>Transaction data</strong>: Transaction ID, Sender Account, Receiver Account, Amount, Timestamp, Transaction Type, Status, Reference/UTR</div>
+        <div class="up-req-item"><strong>Account data</strong>: Account Number, Account Holder Name, Mobile, Email, Bank Name, Account Creation Date, Account Status</div>
+        <div class="up-req-item"><strong>Balance/activity</strong>: Current Balance, Last Withdrawal Amount, Withdrawal Timestamp</div>
+        <div class="up-req-item"><strong>Fraud report</strong>: Complaint ID, Victim Account, Fraud Amount, Fraud Timestamp, Fraud Type</div>
+      </div>
+    </div>
 
     <div class="up-ack-row">
       <label>Case / ACK No.</label>
